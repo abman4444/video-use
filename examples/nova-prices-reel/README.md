@@ -75,8 +75,25 @@ it for the brand file before this ships.
 | `equalHousingSrc` | `brand/equal-housing.svg` | Equal Housing Opportunity mark |
 | — | `public/sold/sf-1..4`, `tw-1..3` | seven MLS exports, centre-cropped 4:3 at 560 × 420, vertical anchor 0.46 |
 
-The portrait recipes (monotone ramp, luminance-ratio unsharp) are in the brief; do them in
-processing, not as a CSS filter, or the Investigate plate stops matching the palette.
+### Preparing them
+
+`scripts/prepare-assets.mjs` does the crop and the brief's per-pixel treatments — they are
+recipes, not CSS filters, and doing them as filters stops the Investigate plate matching
+the palette.
+
+```bash
+# the closing headshot, in colour
+node scripts/prepare-assets.mjs <source> public/portraits/ahmed-color.png --size 304x388 --anchor 0.30
+# the Investigate plate, monotone on a neutral ink ramp
+node scripts/prepare-assets.mjs <source> public/portraits/ahmed-findout.png --size 760x968 --anchor 0.35 --mono
+# a listing photo: 4:3, anchored to favour the roofline over the lawn
+node scripts/prepare-assets.mjs <source> public/sold/sf-1.png --size 560x420 --anchor 0.46
+```
+
+The source may be an image or a video (`--frame N`, reached by seeking, with `--fps` to
+interpret it). Pixels are decoded and encoded by `scripts/png.mjs`, a small PNG codec:
+Remotion's bundled ffmpeg has no rawvideo muxer, so it only pulls the frame and everything
+after that stays in Node.
 
 The 3D logo sting is deliberately **not** in this composition — at the 144px the closing
 lockup allows, its keyed edges go soft. Use it as a top or tail card in the edit.

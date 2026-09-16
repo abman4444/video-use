@@ -1,28 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="170 185 660 630" width="660" height="630" role="img" aria-label="Ahmed Makkiyah Realtor mark">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="195 190 620 625" width="620" height="625" role="img" aria-label="Ahmed Makkiyah Realtor mark">
   <!--
-    INTERIM REDRAW, not the official artwork. Traced by eye from the mark supplied in
-    conversation, because the file itself never reached this machine — only the brief and
-    the logo sting arrived as files. Replace it with the real logo-mark.png and point the
-    composition's logoSrc prop at it: the stroke weights and the key's teeth are
-    approximations and will not match the brand file exactly.
+    INTERIM REDRAW, traced by eye from the mark supplied in conversation — the artwork
+    itself has never reached this machine, only the briefs and the logo sting arrived as
+    files. Replace it with the real logo-mark.png and point the composition's logoSrc prop
+    at it: proportions here are measured off a screen image, not the brand file.
+
+    The mark is an A-frame roof whose counter makes the A, an M formed by two columns and
+    a V, a key lying across the base, and one red block where the M meets the key.
   -->
   <g fill="#111111">
-    <!-- A-frame roof as a chevron band; the space it encloses above the crossbar is the A's counter -->
-    <path d="M 250 500 L 500 200 L 750 500 L 645 500 L 500 320 L 355 500 Z"/>
-    <!-- the A's crossbar -->
-    <rect x="375" y="455" width="250" height="35"/>
-    <!-- M — two columns and the V between them -->
-    <rect x="320" y="500" width="100" height="260"/>
-    <rect x="580" y="500" width="100" height="260"/>
-    <path d="M 420 500 L 500 655 L 580 500 L 527 500 L 500 555 L 473 500 Z"/>
-    <!-- key: bow, shaft, teeth -->
-    <circle cx="245" cy="715" r="32" fill="none" stroke="#111111" stroke-width="30"/>
-    <rect x="275" y="700" width="485" height="30"/>
-    <rect x="705" y="730" width="20" height="38"/>
-    <rect x="740" y="730" width="20" height="38"/>
+    <!-- A: chevron legs, closed along the eave line; the white it encloses is the counter -->
+    <path d="M 276 508 L 503 203 L 727 508 L 659 508 L 503 313 L 344 508 Z"/>
+    <!-- the A's crossbar, meeting the legs' inner edges -->
+    <rect x="394" y="437" width="218" height="27"/>
+    <!-- M: two columns and the V between them -->
+    <rect x="344" y="508" width="62" height="284"/>
+    <rect x="602" y="508" width="62" height="284"/>
+    <path d="M 406 508 L 503 641 L 602 508 L 540 508 L 503 561 L 468 508 Z"/>
+    <!-- key: bow, shaft, two teeth -->
+    <circle cx="271" cy="740" r="36" fill="none" stroke="#111111" stroke-width="22"/>
+    <rect x="307" y="729" width="485" height="21"/>
+    <rect x="727" y="750" width="15" height="26"/>
+    <rect x="758" y="750" width="15" height="26"/>
     <!-- ground line -->
-    <rect x="180" y="775" width="640" height="18"/>
+    <rect x="208" y="789" width="592" height="11"/>
   </g>
-  <!-- the single red accent, crossing the key where the M meets it -->
-  <rect x="470" y="680" width="58" height="105" fill="#cc1122"/>
+  <!-- the single red accent, crossing the key where the M's V lands on it -->
+  <rect x="477" y="698" width="49" height="94" fill="#cc1122"/>
 </svg>

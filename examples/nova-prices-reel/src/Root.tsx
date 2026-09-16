@@ -15,7 +15,7 @@ export const RemotionRoot: React.FC = () => {
 			defaultProps={{
 				logoSrc: 'logo-mark.svg',
 				portraitFindOut: 'portraits/ahmed-findout.svg',
-				portraitColor: 'portraits/ahmed-color.svg',
+				portraitColor: 'portraits/ahmed-color.png',
 				brokerageSrc: 'brand/douglas-realty.svg',
 				equalHousingSrc: 'brand/equal-housing.svg',
 				reducedMotion: false,

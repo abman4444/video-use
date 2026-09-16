@@ -1,9 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 160" width="150" height="160">
-  <rect width="150" height="160" fill="#ececed"/>
-  <g fill="none" stroke="#c4c4cb" stroke-width="2">
-    <path d="M0 0 L150 160 M150 0 L0 160"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 537 550" width="537" height="550" role="img" aria-label="Equal Housing Opportunity">
+  <!--
+    Redrawn by eye. The Equal Housing Opportunity logo is a federally standard mark and
+    should be used as supplied rather than reconstructed — replace this file with the
+    official artwork before the reel ships. The lettering falls back to a system sans
+    because an SVG loaded through <img> cannot reach the page's fonts.
+  -->
+  <path fill="#23417d" fill-rule="evenodd"
+        d="M 268 8 L 537 184 L 537 252 L 462 252 L 462 404 L 75 404 L 75 252 L 0 252 L 0 184 Z
+           M 268 96 L 452 216 L 452 338 L 85 338 L 85 216 Z"/>
+  <rect x="184" y="196" width="170" height="42" fill="#23417d"/>
+  <rect x="184" y="262" width="170" height="42" fill="#23417d"/>
+  <g fill="#23417d" font-family="Helvetica, Arial, sans-serif" font-weight="700" text-anchor="middle">
+    <text x="268" y="478" font-size="70" textLength="512" lengthAdjust="spacingAndGlyphs">EQUAL HOUSING</text>
+    <text x="268" y="544" font-size="70" textLength="512" lengthAdjust="spacingAndGlyphs">OPPORTUNITY</text>
   </g>
-  <rect x="12" y="58" width="126" height="45" fill="#ffffff" opacity="0.92"/>
-  <text x="75" y="78" text-anchor="middle" font-family="monospace" font-size="13" fill="#64646b">PLACEHOLDER</text>
-  <text x="75" y="91" text-anchor="middle" font-family="monospace" font-size="11" fill="#9a9aa1">Equal Housing Opportunity</text>
 </svg>
