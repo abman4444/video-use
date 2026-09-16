@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 420" width="560" height="420">
+  <rect width="560" height="420" fill="#ececed"/>
+  <g fill="none" stroke="#c4c4cb" stroke-width="2">
+    <path d="M0 0 L560 420 M560 0 L0 420"/>
+  </g>
+  <rect x="45" y="151" width="470" height="118" fill="#ffffff" opacity="0.92"/>
+  <text x="280" y="206" text-anchor="middle" font-family="monospace" font-size="25" fill="#64646b">PLACEHOLDER</text>
+  <text x="280" y="239" text-anchor="middle" font-family="monospace" font-size="18" fill="#9a9aa1">tw-2 — townhome, 4:3</text>
+</svg>

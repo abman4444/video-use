@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 304 388" width="304" height="388">
+  <rect width="304" height="388" fill="#ececed"/>
+  <g fill="none" stroke="#c4c4cb" stroke-width="2">
+    <path d="M0 0 L304 388 M304 0 L0 388"/>
+  </g>
+  <rect x="24" y="140" width="255" height="109" fill="#ffffff" opacity="0.92"/>
+  <text x="152" y="190" text-anchor="middle" font-family="monospace" font-size="13" fill="#64646b">PLACEHOLDER</text>
+  <text x="152" y="221" text-anchor="middle" font-family="monospace" font-size="11" fill="#9a9aa1">ahmed-color — full colour headshot</text>
+</svg>

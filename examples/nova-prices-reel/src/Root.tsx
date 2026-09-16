@@ -14,6 +14,10 @@ export const RemotionRoot: React.FC = () => {
 			height={HEIGHT}
 			defaultProps={{
 				logoSrc: 'logo-mark.svg',
+				portraitFindOut: 'portraits/ahmed-findout.svg',
+				portraitColor: 'portraits/ahmed-color.svg',
+				brokerageSrc: 'brand/douglas-realty.svg',
+				equalHousingSrc: 'brand/equal-housing.svg',
 				reducedMotion: false,
 			}}
 		/>

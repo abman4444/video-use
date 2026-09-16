@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 968" width="760" height="968">
+  <rect width="760" height="968" fill="#ececed"/>
+  <g fill="none" stroke="#c4c4cb" stroke-width="2">
+    <path d="M0 0 L760 968 M760 0 L0 968"/>
+  </g>
+  <rect x="61" y="348" width="638" height="271" fill="#ffffff" opacity="0.92"/>
+  <text x="380" y="474" text-anchor="middle" font-family="monospace" font-size="34" fill="#64646b">PLACEHOLDER</text>
+  <text x="380" y="552" text-anchor="middle" font-family="monospace" font-size="25" fill="#9a9aa1">ahmed-findout — monotone, head-down</text>
+</svg>

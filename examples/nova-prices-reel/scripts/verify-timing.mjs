@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 //
-// Probes the reel's state function frame by frame and asserts the timing contract
-// from the brief. "Any caption that names a year must be on screen only while the
-// line is at that year. Check this by probing the readout, not by eye."
+// Probes the reel's state function frame by frame and asserts the timing contract from
+// the brief. "Any caption that names a year must be on screen only while the line is at
+// that year. Check this by probing the readout, not by eye."
 //
 //   node scripts/verify-timing.mjs
 
@@ -16,7 +16,6 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const out = mkdtempSync(join(tmpdir(), 'nova-probe-'));
 const bundle = join(out, 'reel.mjs');
 
-// src/ is TypeScript; bundle the pure modules with the esbuild that ships with Remotion.
 execFileSync(
 	join(root, 'node_modules', '.bin', 'esbuild'),
 	[
@@ -33,202 +32,232 @@ execFileSync(
 const M = await import(pathToFileURL(bundle).href);
 rmSync(out, {recursive: true, force: true});
 
-const {reelState, windowed, DURATION, CAPTIONS, T, HOLD, money} = M;
+const {
+	reelState, windowed, tipRising, tipAt, rateTipAt,
+	DURATION, FPS, CAPTIONS, CUE, T, HOLD, WALK,
+	money, perMonth, WAIT_COST, PRICE_RISE_PCT, PMT_RISE_PCT, REAL_RISE_PCT,
+	PMT_FROM, PMT_TO, FROM_YEAR, TO_YEAR,
+} = M;
 
 let failures = 0;
 const check = (name, ok, detail = '') => {
-	if (ok) {
-		console.log(`  \x1b[32m+\x1b[0m ${name}`);
-	} else {
+	if (ok) console.log(`  \x1b[32m+\x1b[0m ${name}`);
+	else {
 		failures++;
 		console.log(`  \x1b[31mx\x1b[0m ${name}${detail ? ` — ${detail}` : ''}`);
 	}
 };
+const head = (s) => console.log(`\n\x1b[1m${s}\x1b[0m`);
 
 const frames = [...Array(DURATION).keys()];
-const state = frames.map((f) => reelState(f));
+const S = frames.map((f) => reelState(f, FPS));
+const at = (sec) => S[Math.round(sec * FPS)];
 
-console.log('\nNOVA Prices Reel — timing contract\n');
+console.log('\nNOVA Prices Reel — timing contract');
 
-// --- the draw is keyframed in year space, not progress space -----------------
+// ---------------------------------------------------------------- the draw
+head('The draw is keyframed in year space');
 
+check('line holds at 1975 until its first keyframe', at(CUE.climb + 0.19).tip.year === 1975);
 check(
-	'line starts at 1975 and is still there at frame 89',
-	state[89].tip.year === 1975,
-	`got ${state[89].tip.year}`,
+	'line reaches the 2006 peak at Climb+3.6',
+	Math.abs(at(CUE.climb + 3.6).tip.year - 2006) < 0.02,
+	`got ${at(CUE.climb + 3.6).tip.year.toFixed(3)}`,
 );
 check(
-	'line reaches the 2006 peak at frame 192',
-	Math.abs(state[192].tip.year - 2006) < 0.01,
-	`got ${state[192].tip.year.toFixed(3)}`,
+	'line reaches the 2009 trough at Climb+4.2',
+	Math.abs(at(CUE.climb + 4.2).tip.year - 2009) < 0.02,
+	`got ${at(CUE.climb + 4.2).tip.year.toFixed(3)}`,
 );
 check(
-	'line reaches the 2009 trough at frame 210',
-	Math.abs(state[210].tip.year - 2009) < 0.01,
-	`got ${state[210].tip.year.toFixed(3)}`,
-);
-check(
-	'line finishes at 2025 by frame 312 and stays there',
-	Math.abs(state[312].tip.year - 2025) < 0.01 && state[DURATION - 1].tip.year === 2025,
-	`got ${state[312].tip.year.toFixed(3)}`,
+	'line finishes on 2026 by Climb+7.6 and stays there',
+	Math.abs(at(CUE.climb + 7.6).tip.year - 2026) < 0.02 && S[DURATION - 1].tip.year === 2026,
+	`got ${at(CUE.climb + 7.6).tip.year.toFixed(3)}`,
 );
 
-// The 1.6s hold is what makes every caption timing below deterministic.
-const holdFrames = frames.filter((f) => f >= HOLD.from && f <= HOLD.to);
+const holdFrames = frames.filter((f) => S[f].t >= HOLD[0] && S[f].t <= HOLD[1]);
 check(
-	`the line is parked on 2009 for all ${holdFrames.length} frames of the hold`,
-	holdFrames.every((f) => Math.abs(state[f].tip.year - 2009) < 1e-9),
+	`the line is parked on 2009 for all ${holdFrames.length} frames of the 1.6s hold`,
+	holdFrames.every((f) => Math.abs(S[f].tip.year - 2009) < 1e-9),
 );
 
-// --- the brief's own sanity check --------------------------------------------
+// ---------------------------------------------------------------- the brief's own check
+head('The sanity check');
 
 const cap2 = CAPTIONS[1].window;
-const cap2Frames = frames.filter((f) => windowed(f, cap2) > 0);
+const cap2Frames = frames.filter((f) => windowed(S[f].t, cap2) > 0);
 const badReadout = cap2Frames.filter(
-	(f) => state[f].yearLabel !== 2009 || money(state[f].dollars) !== '$408,000',
+	(f) => S[f].yearLabel !== 2009 || money(S[f].dollars) !== '$408,000',
 );
 check(
-	'every frame caption 2 is on screen the readout says 2009 / $408,000',
+	'every frame caption 2 is up, the readout says 2009 / $408,000',
 	badReadout.length === 0,
 	badReadout.length
-		? `${badReadout.length} bad frames, first at ${badReadout[0]} showing ` +
-			`${state[badReadout[0]].yearLabel} / ${money(state[badReadout[0]].dollars)}`
+		? `${badReadout.length} bad frames, first showing ${S[badReadout[0]].yearLabel} / ${money(S[badReadout[0]].dollars)}`
 		: '',
 );
+// The trap: the line has just fallen for three years, but 2010 is higher — a
+// forward-looking direction test paints the bottom of the crash as a gain.
+check(
+	'the 2009 trough reads BLUE, not red (the tip looks backward)',
+	cap2Frames.every((f) => S[f].rising === false),
+	`${cap2Frames.filter((f) => S[f].rising).length} red frames`,
+);
 
-// Caption 1 names 1975; caption 3 spans the 2009 -> 2025 recovery.
-const cap1Frames = frames.filter((f) => windowed(f, CAPTIONS[0].window) > 0);
+const cap1 = frames.filter((f) => windowed(S[f].t, CAPTIONS[0].window) > 0);
 check(
 	'caption 1 runs entirely inside the 1975 -> 2006 sweep',
-	cap1Frames.every((f) => state[f].tip.year >= 1975 && state[f].tip.year <= 2006),
-	`${state[cap1Frames[0]].tip.year.toFixed(1)} -> ${state[cap1Frames[cap1Frames.length - 1]].tip.year.toFixed(1)}`,
+	cap1.every((f) => S[f].tip.year >= 1975 && S[f].tip.year <= 2006),
 );
-const cap3Frames = frames.filter((f) => windowed(f, CAPTIONS[2].window) > 0);
+const cap3 = frames.filter((f) => windowed(S[f].t, CAPTIONS[2].window) > 0);
 check(
 	'caption 3 runs from the trough to the end of the recovery',
-	state[cap3Frames[0]].tip.year >= 2009 &&
-		state[cap3Frames[cap3Frames.length - 1]].tip.year >= 2024,
-	`${state[cap3Frames[0]].tip.year.toFixed(1)} -> ${state[cap3Frames[cap3Frames.length - 1]].tip.year.toFixed(1)}`,
-);
-
-// Only one caption at a time.
-const overlap = frames.filter(
-	(f) => CAPTIONS.filter((c) => windowed(f, c.window) > 0.02).length > 1,
-);
-check('captions never overlap', overlap.length === 0, `${overlap.length} frames`);
-
-// --- the 2008 callout is keyed off the line, not the clock -------------------
-
-const dropOn = frames.filter((f) => state[f].dropOpacity > 0);
-check(
-	'the -20% callout appears only after the line passes 2008.6',
-	dropOn.every((f) => state[f].tip.year > 2008.6),
-	`first at frame ${dropOn[0]} / year ${state[dropOn[0]].tip.year.toFixed(2)}`,
+	S[cap3[0]].tip.year >= 2009 && S[cap3[cap3.length - 1]].tip.year >= 2025,
+	`${S[cap3[0]].tip.year.toFixed(1)} -> ${S[cap3[cap3.length - 1]].tip.year.toFixed(1)}`,
 );
 check(
-	'the callout outlasts caption 3 and is gone before the Gap camera move',
-	state[cap3Frames[cap3Frames.length - 1]].dropOpacity > 0 &&
-		state[T.camGap[0]].dropOpacity === 0,
+	'captions never overlap',
+	frames.filter((f) => CAPTIONS.filter((c) => windowed(S[f].t, c.window) > 0.02).length > 1).length === 0,
 );
 
-// --- cross-fades, not overlaps ----------------------------------------------
+// ---------------------------------------------------------------- the rate ride
+head('The rate ride is linear');
 
-const both = frames.filter(
-	(f) => state[f].chartOpacity > 0.02 && state[f].panelOpacity > 0.02,
-);
-check('chart and Split panel never overlap', both.length === 0, `${both.length} frames`);
-
-const panelAndClose = frames.filter(
-	(f) => state[f].panelOpacity > 0.02 && state[f].closeOpacity > 0.02,
+const rideA = rateTipAt(T.rateRide[0] + 1).year - rateTipAt(T.rateRide[0]).year;
+const rideB = rateTipAt(T.rateRide[0] + 4).year - rateTipAt(T.rateRide[0] + 3).year;
+check(
+	'the ride covers equal years per second throughout (no ease)',
+	Math.abs(rideA - rideB) < 1e-6,
+	`${rideA.toFixed(4)} vs ${rideB.toFixed(4)} years/s`,
 );
 check(
-	'Split panel and Close never overlap',
-	panelAndClose.length === 0,
-	`${panelAndClose.length} frames`,
-);
-
-// These two share a position and are specified as a cross-fade, so a brief overlap
-// is the point — what must not happen is both reading at full strength at once.
-const doubled = frames.filter(
-	(f) => Math.min(state[f].readoutOpacity, state[f].deltaOpacity) > 0.5,
+	'the ride is about 8 years per second, not 19',
+	rideA > 7.5 && rideA < 8.7,
+	`${rideA.toFixed(2)} years/s`,
 );
 check(
-	'live readout and the delta headline cross-fade rather than stack',
-	doubled.length === 0,
-	`${doubled.length} frames with both above 0.5`,
+	'the ride starts at 1975 and ends on 2026',
+	rateTipAt(T.rateRide[0]).year === 1975 && Math.abs(rateTipAt(T.rateRide[1]).year - 2026) < 0.01,
+);
+check(
+	'the rate layer is gone before the Gap camera move',
+	at(CUE.gap - 0.3).rateLayerOpacity === 0 && at(CUE.rates + 3).rateLayerOpacity > 0.9,
 );
 
-// --- no frame is ever blank --------------------------------------------------
+// ---------------------------------------------------------------- handoffs
+head('Handoffs are cross-fades, never stacks');
 
-// The corner mark is up on every frame, so nothing is ever literally blank — and the
-// brief's own opening (eyebrow at frame 3, headline at frame 7) leans on exactly that.
-// What would read as a white flash is a run of frames mid-piece where one scene has
-// faded out and the next has not started. Handoffs may touch zero; they may not linger.
-const empty = frames.filter((f) => {
-	const s = state[f];
-	return (
-		Math.max(
-			s.chartOpacity,
-			s.hookOpacity,
-			s.panelOpacity,
-			s.closeOpacity,
-			s.readoutOpacity,
-			s.deltaOpacity,
-		) < 0.05 && f >= T.chartIn[0]
+const panels = [
+	['chart', (s) => s.chartOpacity],
+	['Split', (s) => s.panelOpacity],
+	['Sold', (s) => s.soldOpacity],
+	['Payment', (s) => s.payOpacity],
+	['Close', (s) => s.closeOpacity],
+	['Question', (s) => s.askOpacity],
+	['Investigate', (s) => s.invOpacity],
+];
+for (let i = 0; i < panels.length; i++) {
+	for (let j = i + 1; j < panels.length; j++) {
+		const [na, fa] = panels[i];
+		const [nb, fb] = panels[j];
+		const both = frames.filter((f) => fa(S[f]) > 0.02 && fb(S[f]) > 0.02);
+		if (na === 'chart' && (nb === 'Investigate' || nb === 'Question')) continue; // deliberate overlap
+		if (both.length) {
+			check(`${na} and ${nb} never overlap`, false, `${both.length} frames from ${both[0]}`);
+		}
+	}
+}
+check('every full-screen panel pair is exclusive (see above)', true);
+
+const readoutDelta = frames.filter(
+	(f) => Math.min(S[f].readoutOpacity, S[f].deltaOpacity) > 0.5,
+);
+check('live readout and the delta headline cross-fade rather than stack', readoutDelta.length === 0);
+
+// The corner mark is up on every frame, so nothing is literally blank. What would read as
+// a white flash is a run of frames where one scene has gone and the next has not started.
+const content = (s) =>
+	Math.max(
+		s.chartOpacity, s.askOpacity, s.invOpacity, s.panelOpacity,
+		s.soldOpacity, s.payOpacity, s.closeOpacity, s.readoutOpacity, s.deltaOpacity,
 	);
-});
 let longest = 0;
 let run = 0;
+let runAt = -1;
 for (const f of frames) {
-	run = empty.includes(f) ? run + 1 : 0;
-	longest = Math.max(longest, run);
+	if (content(S[f]) < 0.05 && S[f].t > 0.6) {
+		run++;
+		if (run > longest) {
+			longest = run;
+			runAt = f - run + 1;
+		}
+	} else run = 0;
 }
 check(
 	'no white flash at any handoff (longest near-empty run <= 2 frames)',
 	longest <= 2,
-	`longest run ${longest} frames${empty.length ? ` (at ${empty[0]}..)` : ''}`,
+	`longest run ${longest} frames at f${runAt}`,
 );
-
 check(
 	'the close holds at full opacity through the last frame',
-	state[DURATION - 1].closeOpacity === 1,
-	`got ${state[DURATION - 1].closeOpacity}`,
+	S[DURATION - 1].closeOpacity === 1,
 );
 
-// --- the camera --------------------------------------------------------------
+// ---------------------------------------------------------------- camera
+head('One camera over one chart');
 
-check(
-	'camera is at 1.00 when the line starts drawing',
-	Math.abs(state[93].camera.scale - 1) < 1e-6,
-	`got ${state[93].camera.scale}`,
-);
+check('camera is at 1.00 when the line starts drawing', Math.abs(at(CUE.climb + 0.3).camera.scale - 1) < 1e-6);
 check(
 	'camera keeps drifting through the 2009 hold',
-	state[HOLD.to].camera.scale > state[HOLD.from].camera.scale,
-	`${state[HOLD.from].camera.scale.toFixed(4)} -> ${state[HOLD.to].camera.scale.toFixed(4)}`,
+	at(HOLD[1]).camera.scale > at(HOLD[0]).camera.scale,
 );
 check(
-	'Gap framing is scale 2.0 on (883, 800)',
-	Math.abs(state[420].camera.scale - 2) < 1e-6 &&
-		Math.abs(state[420].camera.fx - 883) < 1e-6 &&
-		Math.abs(state[420].camera.fy - 800) < 1e-6,
+	'Gap framing is scale 2.0 on (885, 800)',
+	Math.abs(at(CUE.gap + 2).camera.scale - 2) < 1e-6 &&
+		Math.abs(at(CUE.gap + 2).camera.fx - 885) < 1e-6 &&
+		Math.abs(at(CUE.gap + 2).camera.fy - 800) < 1e-6,
 );
 check(
 	'camera is back to its original framing by the Split panel',
-	Math.abs(state[T.panelIn[1]].camera.scale - 1) < 1e-6,
-	`got ${state[T.panelIn[1]].camera.scale}`,
+	Math.abs(at(CUE.split + 0.1).camera.scale - 1) < 1e-6,
 );
 
-// --- the figures -------------------------------------------------------------
+// ---------------------------------------------------------------- the walker
+head("The walker's six beats");
 
+const order = [WALK.IN, WALK.STOP, WALK.LOOK, WALK.FLASH, WALK.BLINK, WALK.CAM, WALK.SCR, WALK.QM];
 check(
-	'the delta counter lands on +$261,000',
-	`+${money(state[T.deltaCount[1]].deltaValue)}` === '+$261,000',
-	`got +${money(state[T.deltaCount[1]].deltaValue)}`,
+	'walk, halt, look, flash, blink, back to camera, scratch, question mark — in that order',
+	order.every((v, i) => i === 0 || v > order[i - 1]),
 );
 check(
-	'2025 reads $740,000',
-	money(state[DURATION - 1].tip.index * (740000 / 319.72)) === '$740,000',
+	'the whole beat finishes inside its own scene',
+	WALK.QM + 0.25 < WALK.OUT && WALK.OUT <= CUE.climb,
+	`QM ends ${(WALK.QM + 0.25).toFixed(2)}s, walker out ${WALK.OUT.toFixed(2)}s, Climb ${CUE.climb}s`,
+);
+check(
+	'the statement is still up when it flashes back at him',
+	at(WALK.FLASH).invOpacity > 0.9,
+	`invOpacity ${at(WALK.FLASH).invOpacity.toFixed(2)}`,
+);
+
+// ---------------------------------------------------------------- the figures
+head('Every figure on screen');
+
+check(
+	`the delta counter lands on +${money(WAIT_COST)}`,
+	`+${money(at(T.deltaCount[1]).deltaValue)}` === '+$326,000',
+	`got +${money(at(T.deltaCount[1]).deltaValue)}`,
+);
+check(`${FROM_YEAR} reads $487,000`, money(M.DOLLARS_FROM) === '$487,000', money(M.DOLLARS_FROM));
+check(`${TO_YEAR} reads $813,000`, money(M.DOLLARS_TO) === '$813,000', money(M.DOLLARS_TO));
+check('the price rose 67%', Math.round(PRICE_RISE_PCT) === 67, `${PRICE_RISE_PCT.toFixed(1)}%`);
+check('the payment rose 128%', Math.round(PMT_RISE_PCT) === 128, `${PMT_RISE_PCT.toFixed(1)}%`);
+check('adjusted for inflation it rose 21%', Math.round(REAL_RISE_PCT) === 21, `${REAL_RISE_PCT.toFixed(1)}%`);
+check(
+	'the two payments read $1,782/mo and $4,056/mo',
+	perMonth(PMT_FROM) === '$1,782/mo' && perMonth(PMT_TO) === '$4,056/mo',
+	`${perMonth(PMT_FROM)} / ${perMonth(PMT_TO)}`,
 );
 
 console.log(

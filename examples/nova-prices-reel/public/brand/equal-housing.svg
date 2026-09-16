@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 160" width="150" height="160">
+  <rect width="150" height="160" fill="#ececed"/>
+  <g fill="none" stroke="#c4c4cb" stroke-width="2">
+    <path d="M0 0 L150 160 M150 0 L0 160"/>
+  </g>
+  <rect x="12" y="58" width="126" height="45" fill="#ffffff" opacity="0.92"/>
+  <text x="75" y="78" text-anchor="middle" font-family="monospace" font-size="13" fill="#64646b">PLACEHOLDER</text>
+  <text x="75" y="91" text-anchor="middle" font-family="monospace" font-size="11" fill="#9a9aa1">Equal Housing Opportunity</text>
+</svg>
