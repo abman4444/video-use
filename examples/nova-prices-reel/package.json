@@ -1,0 +1,24 @@
+{
+  "name": "nova-prices-reel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NOVA Prices Reel — 1080x1920, 30fps, 828 frames.",
+  "scripts": {
+    "dev": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts NovaPricesReel out/nova-prices-reel.mp4",
+    "still": "remotion still src/index.ts NovaPricesReel out/still.png",
+    "verify": "node scripts/verify-timing.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.525",
+    "@remotion/fonts": "4.0.525",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "4.0.525"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "typescript": "^5.6.3"
+  }
+}

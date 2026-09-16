@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="AM Real Estate mark">
+  <!-- Placeholder mark. Drop the real artwork in as public/logo-mark.png and
+       set the composition's logoSrc prop to "logo-mark.png". -->
+  <rect width="120" height="120" rx="24" fill="#0b0b0c"/>
+  <path d="M60 26 L98 60 L86 60 L86 94 L70 94 L70 70 L50 70 L50 94 L34 94 L34 60 L22 60 Z" fill="#ffffff"/>
+</svg>
