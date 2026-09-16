@@ -60,9 +60,15 @@ would make a vehicle accelerate through the middle of its own journey.
 Everything under `public/` marked PLACEHOLDER is a stand-in. Replace the file and point the
 matching `defaultProps` entry in `src/Root.tsx` at it — nothing else changes.
 
+`logo-mark.svg` is a different case: it is a **redraw** of the real mark, traced by eye,
+because the artwork was supplied as a chat image and never reached the filesystem. It reads
+correctly at the two sizes the piece uses it (76px in the corner mark on every frame, 144px
+in the closing lockup) but the stroke weights and the key's teeth are approximations. Swap
+it for the brand file before this ships.
+
 | prop | current placeholder | wants |
 |---|---|---|
-| `logoSrc` | `logo-mark.svg` | the house-and-key mark, square-ish, transparent |
+| `logoSrc` | `logo-mark.svg` — **an interim redraw**, traced by eye from the supplied mark | the real house-and-key artwork, transparent background |
 | `portraitFindOut` | `portraits/ahmed-findout.svg` | head-down shot, **monotone**, 760 × 968 (2× the 380 × 484 slot) |
 | `portraitColor` | `portraits/ahmed-color.svg` | direct-to-camera headshot, **full colour**, 304 × 388 |
 | `brokerageSrc` | `brand/douglas-realty.svg` | Douglas Realty logo |
