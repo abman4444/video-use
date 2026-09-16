@@ -58,3 +58,6 @@ master.srt
 takes_packed.md
 edl.json
 project.md
+
+# Firecrawl CLI local cache (firecrawl scrape -o .firecrawl/...)
+.firecrawl/
