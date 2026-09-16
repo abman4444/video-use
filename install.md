@@ -158,5 +158,6 @@ Tell the user, in one short message:
 - `yt-dlp` is optional. Don't block install on it; install lazily the first time a user asks to pull from a URL.
 - Node.js/npm are only needed for HyperFrames or Remotion slots. HyperFrames currently requires Node.js 22+.
 - HyperFrames, Remotion, and Manim are optional animation engines. Don't install or prefer one globally during setup; pick the engine per animation slot in `SKILL.md`. HyperFrames can run through `npx --yes hyperframes ...` in the slot directory. Remotion can be scaffolded with `npx create-video@latest` or installed inside the slot before rendering.
+- Remotion Studio serves on `localhost` and only works while its command is running. Run `helpers/remotion_studio.sh` on the user's own machine — from a remote/SSH shell the printed URL points at the remote box, not at the user's browser. The script refuses to auto-open a browser when it detects that.
 - Never run transcription as part of install verification unless the user explicitly asks — Scribe costs real money.
 - If the user is on Linux without a package manager Claude recognizes, print the manual `ffmpeg` install URL and wait rather than guessing.

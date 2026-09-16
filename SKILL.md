@@ -77,6 +77,7 @@ Helpers (`helpers/transcribe.py`, `helpers/render.py`, etc.) live alongside this
 - **`timeline_view.py <video> <start> <end>`** — filmstrip + waveform PNG. On-demand visual drill-down. **Not a scan tool** — use it at decision points, not constantly.
 - **`render.py <edl.json> -o <out>`** — per-segment extract → concat → overlays (PTS-shifted) → subtitles LAST. `--preview` for 720p fast. `--build-subtitles` to generate master.srt inline.
 - **`grade.py <in> -o <out>`** — ffmpeg filter chain grade. Presets + `--filter '<raw>'` for custom.
+- **`remotion_studio.sh [slot_dir]`** — scaffold (if missing) and launch Remotion Studio inside an animation slot on a genuinely free port. Local machine only — Studio serves on `localhost`, so a remote/SSH shell serves the wrong machine. `--check` verifies prereqs and scaffolds without launching.
 
 For animations, create `<edit>/animations/slot_<id>/` with `Bash` and spawn a sub-agent via the `Agent` tool.
 
@@ -209,7 +210,7 @@ Pick the engine per animation slot. Do not default to Remotion just because the 
 
 For HyperFrames slots, scaffold the slot inside `edit/animations/slot_<id>/` with `npx --yes hyperframes init . --example blank --non-interactive --skip-skills`, build the HTML composition there, run the HyperFrames checks that fit the slot (`lint`, `validate`, and a draft render when practical), then produce the final overlay video with `npx --yes hyperframes render . -o render.mp4` or `--format webm -o render.webm` when alpha is required. Point the EDL overlay `file` at the actual rendered path.
 
-For Remotion slots, keep the Remotion project isolated inside the same slot directory, scaffold with `npx create-video@latest` or install Remotion locally there, render the composition to `render.mp4` with the project-local `remotion render` command, and verify duration and dimensions with `ffprobe`.
+For Remotion slots, keep the Remotion project isolated inside the same slot directory. `helpers/remotion_studio.sh <slot_dir>` scaffolds one and opens Studio for authoring; otherwise scaffold with `npx create-video@latest` or install Remotion locally there. Render the composition to `render.mp4` with the project-local `remotion render` command, and verify duration and dimensions with `ffprobe`.
 
 None is mandatory. Invent hybrids if useful (e.g., PIL background with a HyperFrames or Remotion layer on top).
 
