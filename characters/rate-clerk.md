@@ -1,21 +1,54 @@
-# The rate clerk — Higgsfield prompt pack
+# Mr. Prime — current canonical design (the rate clerk)
 
-Original character for the reel, replacing the hand-drawn walker. Separate build from
-Mr. Prime (`interest-rate-mascot.md`) — different silhouette, different era, different
-job. Frames are generated on flat white so they key cleanly onto a timeline.
+**This is Mr. Prime.** Same character as `interest-rate-mascot.md`, redesigned. The
+top-hat-and-waistcoat build in that file is the RETIRED design — keep it for reference,
+do not generate from it. The percent-sign motif carries across the redesign: it was a
+watch-chain charm on the old build, it is printed on the eyeshade band on this one.
+
+Built to replace the hand-drawn walker in the reel. Frames are generated on flat white so
+they key cleanly onto a timeline.
+
+## Design history
+
+| Build | Status | File / anchor |
+|-------|--------|---------------|
+| Top hat, waistcoat, elderly, B&W inked | Retired | `interest-rate-mascot.md`, plate #4 |
+| Eyeshade clerk, elderly, balding | Superseded | anchor `9a90b197-...` |
+| Eyeshade clerk, young, with hair | **Current** | anchor `82b594db-...` |
+| Eyeshade clerk, young, `%` on eyeshade | **Current + mark** | anchor `16404f84-...` |
 
 ---
 
 ## Character block (identical in every prompt)
 
-> A tall, thin, clean-shaven man in his early sixties. Long narrow face, prominent hooked
-> nose, high forehead, short grey hair at the sides, balding on top. He wears a green bank
-> teller's eyeshade, a white shirt with the sleeves rolled and black elastic arm garters, a
-> thin dark necktie, grey trousers and plain black shoes. He carries a narrow paper ticker
-> tape in one hand. No hat, no glasses, no moustache, no cane, no waistcoat, no jacket.
+> A tall, thin, clean-shaven young man in his late twenties. Long narrow face, prominent
+> hooked nose, smooth unlined youthful features, a full head of thick dark brown hair
+> neatly side-parted with a small cowlick standing up at the crown, hair visible below and
+> around the headband. He wears a green bank teller's eyeshade, a white shirt with the
+> sleeves rolled and black elastic arm garters, a thin dark necktie, grey trousers and
+> plain black shoes. He carries a narrow paper ticker tape in one hand. No hat, no glasses,
+> no moustache, no cane, no waistcoat, no jacket.
+
+**Optional mark:** a single bold black percent sign printed on the front band of the green
+eyeshade, centred on the forehead, in the same hand-inked line weight as the artwork. On
+the eyeshade rather than the shirt — head height reads instantly in a reel, and the shirt
+position competes with the tie and garters.
 
 The six exclusions are load-bearing — they are what keeps him clear of existing mascots.
 Never drop them.
+
+**Age negatives are mandatory.** "Young man" alone loses to the eyeshade-clerk archetype,
+which models strongly associate with an older man. Always append: *not balding, no bald
+patch, no receding hairline, no grey hair, no white hair, not elderly, no wrinkles, no age
+lines.*
+
+**When adding the `%`, keep the rest of the no-text rule.** Use: *apart from the single
+percent sign on the eyeshade there is no text anywhere in the image, no letters, no words,
+no numbers, no digits, no lettering on the shirt, no writing on the ticker tape.*
+
+**Never reference an old-build image when changing age or hair.** The reference overrides
+the exclusions and drags the grey and the bald crown back in. Generate the new anchor from
+text, then reference that.
 
 ## Style block (identical in every prompt)
 
@@ -74,21 +107,50 @@ mascot exclusions need restating as negatives, not just as prose in the characte
 
 ## Generation log
 
-Run 2026-09-17. `seedream_v5_pro`, 3:4, 2k — 1760x2352, comfortably over the 1500px-tall
-requirement. 18 credits. Frame 1 generated standalone, then used as the `image_references`
-input for all five others so the face and clothes carry.
+### Current set — young build (anchor `82b594db`, seed `303336`)
+
+All `seedream_v5_pro`, 2k, referenced off the young anchor. 18 credits. These do NOT carry
+the `%` mark.
+
+| # | Frame | AR | Seed | Job ID |
+|---|-------|----|------|--------|
+| 1 | Walk, contact (anchor) | 3:4 | `303336` | `82b594db-6326-4e12-bd29-70c145a69463` |
+| 2 | Walk, passing | 3:4 | `573763` | `33007e04-4872-464d-9093-de5164d7a4bd` |
+| 3 | Walk, down | 3:4 | `980218` | `368c0722-c8bc-4108-ba70-b66e7532cce1` |
+| 4 | Looking up, surprised | 3:4 | `981128` | `e1bcc3dc-ca59-4485-8739-7d10343e5e77` |
+| 5 | Scratching head, puzzled | 3:4 | `78572` | `036a1540-a460-43fc-9d37-c933004478e9` |
+| 6 | Riding the rate line | 3:4 | `180774` | `573289ff-d3ce-454e-a9b6-854bceac7aaa` |
+| 7 | Turnaround | 16:9 | `506575` | `4d475e1e-3e9f-4e43-8b8c-a3979ddaf7fd` |
+
+### `%` anchor (not yet propagated to the set)
+
+| Frame | AR | Seed | Job ID |
+|-------|----|------|--------|
+| Walk contact, `%` on eyeshade | 3:4 | `665653` | `16404f84-039f-4344-8a40-3c8c493c2c28` |
+
+### Cost lesson
+
+Each change to the character after a set is underway invalidates the whole set, because
+frame 1 anchors every other frame. This character has been through three anchors and two
+full set runs. Lock the design on a single 3-credit anchor first, approve it, then run the
+set once.
+
+### Retired set — elderly build (anchor `9a90b197`, seed `144478`)
+
+Superseded by the young build. Kept only so the job IDs are recoverable.
 
 | # | Frame | Seed | Job ID |
 |---|-------|------|--------|
 | 1 | Walk, contact | `144478` | `9a90b197-7c17-4262-86e5-26eefb849ee9` |
 | 2 | Walk, passing | `876835` | `0996e001-bb81-4d17-be81-58decda5742b` |
-| 3 | Walk, down (in-between) | `904504` | `f627c339-3e54-4c20-a7ee-98c3c72d254f` |
-| 4 | Looking up, surprised | `242087` | `7f241117-3e88-4e0c-85c3-e9b719667f4d` |
-| 5 | Scratching head, puzzled | `972848` | `3a097384-c5b1-4ea1-9b45-95a9b05dfad9` |
+| 3 | Walk, down | `904504` | `f627c339-3e54-4c20-a7ee-98c3c72d254f` |
+| 4 | Looking up | `242087` | `7f241117-3e88-4e0c-85c3-e9b719667f4d` |
+| 5 | Scratching head | `972848` | `3a097384-c5b1-4ea1-9b45-95a9b05dfad9` |
 | 6 | Riding the rate line | `791519` | `9262443c-9b46-42fa-b396-5b133f649caf` |
+| 7 | Turnaround | `391913` | `1f16176d-f389-4a14-a8d8-4d5f9571b18d` |
 
-Frame 1 is the identity anchor. Any re-run of frames 2-6 should reference job
-`9a90b197-...` rather than regenerating from text, or the face drifts.
+All runs at 2k. Frame 1 is always the identity anchor: generate it alone, approve it,
+then reference it for every other frame or the face drifts.
 
 ### Timeline mapping (from the brief)
 

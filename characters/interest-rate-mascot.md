@@ -1,4 +1,11 @@
-# Mr. Prime — the Interest Rate mascot
+# Mr. Prime — RETIRED design (top hat / waistcoat)
+
+> **Superseded.** Mr. Prime'''s current canonical design is the young eyeshade clerk in
+> `rate-clerk.md`. This top-hat build is kept for reference only — do not generate from it.
+> The percent-sign motif carried across the redesign: watch-chain charm here, printed on
+> the eyeshade band there.
+
+# Mr. Prime — the Interest Rate mascot (original build)
 
 Higgsfield prompt pack. Original character in the "old-money banker mascot"
 archetype (top hat + mustache + waistcoat). **Not** Hasbro's Monopoly mascot —
