@@ -345,6 +345,25 @@ Run on Higgsfield MCP, 2026-09-17. All four face-lock plates, 12 credits total.
 |--------|-------|----------|------|-----------|--------|
 | 9-beat expression sheet, 2D B&W inked | `seedream_v5_pro` | 16:9 / 2k (2720x1536) | `95741` | plate #4 job id | `7afc7b38-408c-4893-ab6a-5b30b97d4451` |
 
+### Fourth pass — all eight scenes (referenced off the turnaround)
+
+All `seedream_v5_pro`, 16:9, 2k (2720x1536), referenced off turnaround job
+`2f66489e-8d9b-4e48-a0b9-762db24e29cd`. 8/8 submitted, 0 failed, 24 credits.
+
+| Scene | Section | Seed | Job ID |
+|-------|---------|------|--------|
+| Closing table | 4.1 | `49018` | `89258bd9-1b90-4ec4-afdf-dbceef93d0bc` |
+| Sitting on the stack | 4.2 | `92055` | `c9e1a6a3-4836-489a-a0fe-2a55384df6d8` |
+| Riding the arrow up | 4.3 | `889573` | `92766159-0346-4488-a731-4753db5c5dfc` |
+| The dial | 4.4 | `792849` | `048b25d0-bac5-4458-881c-be23cdba226d` |
+| The tiny house | 4.5 | `234610` | `9a2be366-285e-41ee-bcbd-9e8f71d3f26b` |
+| Peeking | 4.6 | `529730` | `d6450954-21a6-4edf-bc0d-8c0d0fb57b6e` |
+| The deflate | 4.7 | `301154` | `1db12798-506b-4263-b036-0c734fdfb7e1` |
+| Handshake | 4.8 | `564456` | `23eed5b6-d39f-429d-a9c2-84a0d72de41c` |
+
+A turnaround makes a better reference than a face plate for full-body scene work — it
+gives the model the silhouette from several angles instead of only the front.
+
 ### Third pass — character sheet + turnaround (referenced off plate #4)
 
 | Output | Model | AR / res | Seed | Job ID |
@@ -352,7 +371,7 @@ Run on Higgsfield MCP, 2026-09-17. All four face-lock plates, 12 credits total.
 | Split-screen character sheet, 2D B&W inked | `seedream_v5_pro` | 16:9 / 2k (2720x1536) | `727316` | `39fde8fc-0e17-40f3-8c9f-f5b6525ae901` |
 | Four-view turnaround, 2D B&W inked | `seedream_v5_pro` | 16:9 / 2k (2720x1536) | `606346` | `2f66489e-8d9b-4e48-a0b9-762db24e29cd` |
 
-Both referenced plate #4 by job id. Running total for the character: 21 credits.
+Both referenced plate #4 by job id. Running total for the character: 45 credits.
 
 **Referencing mechanic that works:** pass a prior generation's **job ID** straight into
 `medias` with role `image_references` — no re-upload, no URL, and it references the
