@@ -345,6 +345,15 @@ Run on Higgsfield MCP, 2026-09-17. All four face-lock plates, 12 credits total.
 |--------|-------|----------|------|-----------|--------|
 | 9-beat expression sheet, 2D B&W inked | `seedream_v5_pro` | 16:9 / 2k (2720x1536) | `95741` | plate #4 job id | `7afc7b38-408c-4893-ab6a-5b30b97d4451` |
 
+### Third pass — character sheet + turnaround (referenced off plate #4)
+
+| Output | Model | AR / res | Seed | Job ID |
+|--------|-------|----------|------|--------|
+| Split-screen character sheet, 2D B&W inked | `seedream_v5_pro` | 16:9 / 2k (2720x1536) | `727316` | `39fde8fc-0e17-40f3-8c9f-f5b6525ae901` |
+| Four-view turnaround, 2D B&W inked | `seedream_v5_pro` | 16:9 / 2k (2720x1536) | `606346` | `2f66489e-8d9b-4e48-a0b9-762db24e29cd` |
+
+Both referenced plate #4 by job id. Running total for the character: 21 credits.
+
 **Referencing mechanic that works:** pass a prior generation's **job ID** straight into
 `medias` with role `image_references` — no re-upload, no URL, and it references the
 original 2K render rather than a recompressed copy:
