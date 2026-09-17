@@ -339,6 +339,27 @@ Run on Higgsfield MCP, 2026-09-17. All four face-lock plates, 12 credits total.
 | 3 | 2D color (5.C) | `seedream_v5_pro` | 3:4 / 2k | `800928` | `b4b1a633-9b6c-4d01-9a58-0fa637168f3a` |
 | 4 | 2D B&W (5.D) | `seedream_v5_pro` | 3:4 / 2k | `463277` | `be00c9a0-d1b4-42b8-90c3-3ce6d9e6d404` |
 
+### Second pass — expression sheet (referenced off plate #4)
+
+| Output | Model | AR / res | Seed | Reference | Job ID |
+|--------|-------|----------|------|-----------|--------|
+| 9-beat expression sheet, 2D B&W inked | `seedream_v5_pro` | 16:9 / 2k (2720x1536) | `95741` | plate #4 job id | `7afc7b38-408c-4893-ab6a-5b30b97d4451` |
+
+**Referencing mechanic that works:** pass a prior generation's **job ID** straight into
+`medias` with role `image_references` — no re-upload, no URL, and it references the
+original 2K render rather than a recompressed copy:
+
+```
+medias: [{ value: "<prior job id>", role: "image_references" }]
+```
+
+The response echoes it back as `reference_images: ["<job id>"]`, which is how you confirm
+the reference actually attached rather than being silently dropped.
+
+Even with a reference attached, keep restating the costume and face details in the prompt.
+The reference holds the *look*; the text holds the *details*. Drop the text and the
+percent-sign charm, the hat pin and the asymmetric eyebrow go first.
+
 **Keep the seeds.** Re-running a style with its seed plus a small prompt edit gives a
 controlled variation instead of a brand-new character.
 
