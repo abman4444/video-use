@@ -325,3 +325,34 @@ Feed a finished still as the first frame.
 
 Bonus: 5.E engraved is the single most on-brand look for a finance channel and costs
 nothing extra to generate — worth making the set of five.
+
+---
+
+## 9. Generation log — first pass (face lock plates)
+
+Run on Higgsfield MCP, 2026-09-17. All four face-lock plates, 12 credits total.
+
+| # | Style | Model | AR / res | Seed | Job ID |
+|---|-------|-------|----------|------|--------|
+| 1 | 3D color (5.A) | `seedream_v5_pro` | 3:4 / 2k (1760×2352) | `266635` | `f857703f-c72d-40ef-a25e-d26d9aadcab7` |
+| 2 | 3D B&W (5.B) | `seedream_v5_pro` | 3:4 / 2k | `727865` | `107caa68-3893-4acc-9da6-4cd3a2f56500` |
+| 3 | 2D color (5.C) | `seedream_v5_pro` | 3:4 / 2k | `800928` | `b4b1a633-9b6c-4d01-9a58-0fa637168f3a` |
+| 4 | 2D B&W (5.D) | `seedream_v5_pro` | 3:4 / 2k | `463277` | `be00c9a0-d1b4-42b8-90c3-3ce6d9e6d404` |
+
+**Keep the seeds.** Re-running a style with its seed plus a small prompt edit gives a
+controlled variation instead of a brand-new character.
+
+### Unlimited / credits note
+
+The Ultra plan's unlimited perks (Nano Banana Pro, Seedream 5.0 Lite, Flux.2 Pro 1K,
+Nano Banana, GPT Image, Kling O1) are **web-only** — `unlim_trial_in_mcp_active` is
+`false` and every `use_unlim: true` submission through MCP is rejected with
+`Unlimited generations aren't supported`, on every model, regardless of the catalog's
+`supports_unlim: true` flag. Those unlimited-covered models are also absent from the MCP
+catalog entirely. Through the agent path, generations cost credits.
+
+Costs measured by preflight:
+- `seedream_v5_pro` @ 2k — **3 credits** per image
+- `gpt_image_2_5` — **1 credit** per image
+
+To spend the unlimited, paste the prompts into higgsfield.ai in a browser instead.
