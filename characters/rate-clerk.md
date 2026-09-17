@@ -10,12 +10,15 @@ they key cleanly onto a timeline.
 
 ## Design history
 
-| Build | Status | File / anchor |
-|-------|--------|---------------|
+| Build | Status | Anchor |
+|-------|--------|--------|
 | Top hat, waistcoat, elderly, B&W inked | Retired | `interest-rate-mascot.md`, plate #4 |
-| Eyeshade clerk, elderly, balding | Superseded | anchor `9a90b197-...` |
-| Eyeshade clerk, young, with hair | **Current** | anchor `82b594db-...` |
-| Eyeshade clerk, young, `%` on eyeshade | **Current + mark** | anchor `16404f84-...` |
+| Eyeshade clerk, elderly, balding | Superseded | `9a90b197-...` |
+| Eyeshade clerk, young, with hair | Superseded | `82b594db-...` |
+| Eyeshade clerk, young, `%` on eyeshade | **CURRENT — use this** | `16404f84-...` |
+
+The `%` is not decoration: it is the percent motif carried over from the retired top-hat
+build, where it was a watch-chain charm and a hat pin. Same character, same mark, new body.
 
 ---
 
@@ -107,7 +110,29 @@ mascot exclusions need restating as negatives, not just as prose in the characte
 
 ## Generation log
 
-### Current set — young build (anchor `82b594db`, seed `303336`)
+### FINAL SET — young build with `%` (anchor `16404f84`, seed `665653`)
+
+This is the deliverable. All `seedream_v5_pro`, 2k, every frame referenced off the `%`
+anchor. 7/7 completed, 0 failed.
+
+| # | Frame | AR | Size | Seed | Job ID |
+|---|-------|----|------|------|--------|
+| 1 | Walk, contact (anchor) | 3:4 | 1760x2352 | `665653` | `16404f84-039f-4344-8a40-3c8c493c2c28` |
+| 2 | Walk, passing | 3:4 | 1760x2352 | `538806` | `80329926-64a9-44ea-8b31-d6fcee637b10` |
+| 3 | Walk, down | 3:4 | 1760x2352 | `749096` | `e310b0dd-f707-4125-ba2e-b6ef3b1b6f3a` |
+| 4 | Looking up, surprised | 3:4 | 1760x2352 | `830509` | `0c4d5715-451a-4922-b94a-4e2b5500cb61` |
+| 5 | Scratching head, puzzled | 3:4 | 1760x2352 | `383960` | `937e932d-8f93-425b-8293-c90b9920618a` |
+| 6 | Riding the rate line | 3:4 | 1760x2352 | `100468` | `1deaac66-d676-48e1-bfb9-1fb9cf99ca7a` |
+| 7 | Turnaround | 16:9 | 2720x1536 | `139224` | `f69fd830-84cb-425f-a61b-e88d0dde19de` |
+
+**Per-pose occlusion clauses.** With a mark on the eyeshade, three poses needed the hand or
+head steered so the `%` stays readable — worth keeping if these are ever regenerated:
+- Frame 4: *the percent sign on the band riding up with the eyeshade and still clearly legible*
+- Frame 5: *his hand kept clear of the eyeshade band so the percent sign is not covered*
+- Frame 6: *the other raised to the side of his eyeshade without covering the percent sign*
+- Frame 7 rear view: *the plain eyeshade strap across it, no percent sign visible from behind*
+
+### Superseded — young build without the mark (anchor `82b594db`, seed `303336`)
 
 All `seedream_v5_pro`, 2k, referenced off the young anchor. 18 credits. These do NOT carry
 the `%` mark.
@@ -122,18 +147,12 @@ the `%` mark.
 | 6 | Riding the rate line | 3:4 | `180774` | `573289ff-d3ce-454e-a9b6-854bceac7aaa` |
 | 7 | Turnaround | 16:9 | `506575` | `4d475e1e-3e9f-4e43-8b8c-a3979ddaf7fd` |
 
-### `%` anchor (not yet propagated to the set)
-
-| Frame | AR | Seed | Job ID |
-|-------|----|------|--------|
-| Walk contact, `%` on eyeshade | 3:4 | `665653` | `16404f84-039f-4344-8a40-3c8c493c2c28` |
-
 ### Cost lesson
 
 Each change to the character after a set is underway invalidates the whole set, because
-frame 1 anchors every other frame. This character has been through three anchors and two
-full set runs. Lock the design on a single 3-credit anchor first, approve it, then run the
-set once.
+frame 1 anchors every other frame. This character went through four anchors and three full set
+runs — roughly 57 credits on versions now superseded, against 21 for the set that shipped.
+Lock the design on a single 3-credit anchor first, approve it, then run the set once.
 
 ### Retired set — elderly build (anchor `9a90b197`, seed `144478`)
 
