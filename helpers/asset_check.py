@@ -18,11 +18,22 @@ Also reports hard spec mismatches as text: overlay duration vs the window the
 EDL declares for it, overlay resolution vs the render target, and any window
 that runs off the end of the timeline.
 
+If an `assets.json` manifest sits next to the EDL it is used as the source of
+truth. The manifest is the asset plan the user approved BEFORE anything was
+generated — count, kind, spec and the composition constraint each asset has to
+satisfy — so the gate can check what was delivered against what was agreed,
+not just against the EDL. It catches assets that were planned and never used,
+overlays that entered the edit without ever being approved, generated assets
+with no headroom to cut into, and generation that ran before the plan was
+signed off. See `references/assets-and-assembly.md`.
+
 Usage:
     python helpers/asset_check.py <edl.json>
     python helpers/asset_check.py <edl.json> --slot 2
     python helpers/asset_check.py <edl.json> --n-frames 6 --width 1920
-    python helpers/asset_check.py <edl.json> --out-dir /path/to/verify
+    python helpers/asset_check.py <edl.json> --manifest /path/to/assets.json
+    python helpers/asset_check.py <edl.json> --no-manifest
+    python helpers/asset_check.py <edl.json> --scaffold   # migration aid only
 """
 
 from __future__ import annotations
@@ -234,6 +245,196 @@ def build_sheet(
     sheet.save(out_path)
 
 
+# -------- Manifest -----------------------------------------------------------
+#
+# assets.json is the asset plan the user approved BEFORE generation ran. It is
+# the consistency contract across parallel sub-agents (which cannot see each
+# other) and the count the gate checks the delivery against.
+
+MANIFEST_NAME = "assets.json"
+
+
+def _unfilled(value) -> bool:
+    """A scaffolded placeholder counts as missing, not as an answer."""
+    return not value or str(value).strip().upper() == "TODO"
+
+
+def load_manifest(edit_dir: Path, explicit: Path | None, disabled: bool) -> dict | None:
+    if disabled:
+        return None
+    path = explicit or (edit_dir / MANIFEST_NAME)
+    if not path.exists():
+        return None
+    return json.loads(path.read_text())
+
+
+def manifest_target_width(manifest: dict | None, fallback: int) -> int:
+    if manifest:
+        w = (manifest.get("target") or {}).get("width")
+        if w:
+            return int(w)
+    return fallback
+
+
+def pair_assets(manifest: dict, edl: dict, edit_dir: Path) -> tuple[dict, list[dict], list[dict]]:
+    """Match manifest assets to EDL overlays by resolved output path.
+
+    Returns (overlay_index -> asset, planned-but-unused, in-edit-but-unplanned).
+    """
+    assets = manifest.get("assets") or []
+    overlays = edl.get("overlays") or []
+
+    by_path: dict[str, dict] = {}
+    for a in assets:
+        if a.get("file"):
+            by_path[str(resolve_path(str(a["file"]), edit_dir).resolve())] = a
+
+    matched: dict[int, dict] = {}
+    used: set[str] = set()
+    unplanned: list[dict] = []
+    for i, ov in enumerate(overlays):
+        key = str(resolve_path(str(ov.get("file", "")), edit_dir).resolve())
+        asset = by_path.get(key)
+        if asset is None:
+            unplanned.append(ov)
+        else:
+            matched[i] = asset
+            used.add(key)
+
+    unused = [a for a in assets
+              if a.get("file")
+              and str(resolve_path(str(a["file"]), edit_dir).resolve()) not in used]
+    return matched, unused, unplanned
+
+
+def check_manifest(manifest: dict, edl: dict, edit_dir: Path) -> tuple[list[str], list[str]]:
+    """Plan-level checks. Returns (problems, info lines)."""
+    problems: list[str] = []
+    info: list[str] = []
+
+    if not manifest.get("approved"):
+        problems.append(
+            "manifest has no `approved` value — assets were built before the plan was "
+            "confirmed. Get the manifest signed off, then set it.")
+    else:
+        info.append(f"manifest approved {manifest['approved']}")
+
+    concept = manifest.get("concept") or {}
+    if _unfilled(concept.get("summary")):
+        problems.append(
+            "manifest has no `concept.summary` — nothing states the shared visual "
+            "concept, so parallel sub-agents have no consistency contract.")
+
+    _, unused, unplanned = pair_assets(manifest, edl, edit_dir)
+    for a in unused:
+        problems.append(
+            f"planned asset '{a.get('id', a.get('file'))}' never enters the edit — "
+            f"either place it or drop it from the manifest (a paid generation that "
+            f"reaches nothing is still a cost).")
+    for ov in unplanned:
+        problems.append(
+            f"overlay '{ov.get('file')}' is in the EDL but not in the manifest — "
+            f"an unapproved asset entered the edit.")
+
+    planned = len(manifest.get("assets") or [])
+    info.append(f"{planned} asset(s) planned, {len(edl.get('overlays') or [])} in the edit")
+
+    # Cost accounting: attempts vs delivered (assets-and-assembly.md §8).
+    attempts = sum(int(a.get("attempts") or 1) for a in (manifest.get("assets") or []))
+    discarded = sum(int(a.get("discarded") or 0) for a in (manifest.get("assets") or []))
+    if discarded or attempts > planned:
+        info.append(f"cost: {attempts} generation attempt(s) across {planned} delivered "
+                    f"asset(s), {discarded} discarded")
+    return problems, info
+
+
+def check_against_spec(spec: dict, info: dict, ov: dict, slot_label: str
+                       ) -> tuple[list[str], list[tuple[str, tuple[int, int, int]]]]:
+    """Per-asset checks against its manifest entry."""
+    problems: list[str] = []
+    notes: list[tuple[str, tuple[int, int, int]]] = []
+
+    kind = (spec.get("kind") or "authored").lower()
+    planned_dur = float(spec.get("duration_s") or 0.0)
+    headroom = float(spec.get("headroom_s") or 0.0)
+    actual = info["duration"]
+
+    edl_dur = float(ov.get("duration") or 0.0)
+    if planned_dur and edl_dur and abs(planned_dur - edl_dur) > 0.05:
+        msg = (f"EDL window is {edl_dur:.2f}s but the manifest planned {planned_dur:.2f}s "
+               f"— the edit drifted from the approved plan")
+        problems.append(f"[{slot_label}] {msg}")
+        notes.append((f"! {msg}", WARN))
+
+    if kind == "generated" and planned_dur:
+        want = planned_dur + headroom
+        if actual < want - 0.05:
+            msg = (f"generated asset is {actual:.2f}s but needs {want:.2f}s "
+                   f"({planned_dur:.2f}s window + {headroom:.2f}s headroom) — "
+                   f"no material to re-cut into on revision")
+            problems.append(f"[{slot_label}] {msg}")
+            notes.append((f"! {msg}", WARN))
+        elif abs(actual - planned_dur) < 0.05 and headroom <= 0:
+            notes.append(("generated asset exactly fills its window — timing is locked, "
+                          "plan headroom next time", WARN))
+        else:
+            notes.append((f"generated, {actual - planned_dur:.2f}s of headroom to cut into", OK))
+
+    for key, label in (("width", "width"), ("height", "height")):
+        want = spec.get(key)
+        if want and int(want) != info[key]:
+            msg = f"{label} {info[key]}px vs manifest {int(want)}px"
+            problems.append(f"[{slot_label}] {msg}")
+            notes.append((f"! {msg}", WARN))
+
+    want_fps = spec.get("fps")
+    if want_fps and info["fps"] and abs(float(want_fps) - info["fps"]) > 0.5:
+        msg = f"fps {info['fps']:.2f} vs manifest {float(want_fps):.2f}"
+        problems.append(f"[{slot_label}] {msg}")
+        notes.append((f"! {msg}", WARN))
+
+    if _unfilled(spec.get("constraint")):
+        problems.append(f"[{slot_label}] manifest entry has no composition constraint — "
+                        f"nothing states what this asset has to leave room for")
+    else:
+        notes.append((f"must satisfy: {spec['constraint']}", ACCENT))
+
+    return problems, notes
+
+
+def scaffold_manifest(edl: dict, edit_dir: Path, out_path: Path, width: int) -> None:
+    """Migration aid for a project that already has an EDL. The normal path is
+    to write the manifest BEFORE generating anything."""
+    assets = []
+    for ov in edl.get("overlays") or []:
+        f = str(ov.get("file", ""))
+        assets.append({
+            "id": Path(f).parent.name or Path(f).stem,
+            "kind": "authored",
+            "engine": "TODO",
+            "file": f,
+            "width": width,
+            "height": None,
+            "fps": None,
+            "duration_s": float(ov.get("duration") or 0.0),
+            "headroom_s": 0.0,
+            "purpose": "TODO",
+            "constraint": "TODO",
+            "attempts": 1,
+            "discarded": 0,
+        })
+    manifest = {
+        "version": 1,
+        "concept": {"summary": "TODO", "palette": {}, "font": None, "constraints": []},
+        "target": {"width": width, "height": None, "fps": None},
+        "assets": assets,
+        "approved": None,
+    }
+    out_path.write_text(json.dumps(manifest, indent=2) + "\n")
+    print(f"Scaffolded {out_path} from the EDL.")
+    print("Fill the TODOs, confirm it with the user, then set `approved`.")
+
+
 # -------- Main ---------------------------------------------------------------
 
 
@@ -247,12 +448,14 @@ def check_overlay(
     n_frames: int,
     target_width: int,
     tmp: Path,
+    spec: dict | None = None,
 ) -> tuple[bool, list[str]]:
     problems: list[str] = []
     notes: list[tuple[str, tuple[int, int, int]]] = []
 
     ov_path = resolve_path(str(ov["file"]), edit_dir)
-    slot_label = ov_path.parent.name if ov_path.parent.name.startswith("slot") else ov_path.name
+    slot_label = (spec or {}).get("id") or (
+        ov_path.parent.name if ov_path.parent.name.startswith("slot") else ov_path.name)
 
     if not ov_path.exists():
         problems.append(f"[{slot_label}] overlay file missing: {ov_path}")
@@ -279,6 +482,11 @@ def check_overlay(
         notes.append((f"! {msg}", WARN))
     else:
         notes.append((f"resolution {info['width']}x{info['height']}", OK))
+
+    if spec:
+        sp_problems, sp_notes = check_against_spec(spec, info, ov, slot_label)
+        problems.extend(sp_problems)
+        notes.extend(sp_notes)
 
     total = float(edl.get("total_duration_s") or (spans[-1][1] if spans else 0.0))
     window_end = start + (declared or actual)
@@ -351,18 +559,53 @@ def main() -> None:
                     help="check only the Nth overlay (1-based)")
     ap.add_argument("--n-frames", type=int, default=5)
     ap.add_argument("--width", type=int, default=1920,
-                    help="render target width (render.py defaults to 1920)")
+                    help="render target width; a manifest's target.width wins")
     ap.add_argument("--out-dir", type=Path, default=None)
+    ap.add_argument("--manifest", type=Path, default=None,
+                    help=f"asset manifest (default: {MANIFEST_NAME} next to the EDL)")
+    ap.add_argument("--no-manifest", action="store_true",
+                    help="ignore the manifest and check against the EDL alone")
+    ap.add_argument("--scaffold", action="store_true",
+                    help="write a starter manifest from the EDL and exit (migration aid)")
     args = ap.parse_args()
 
     edl = json.loads(args.edl.read_text())
     edit_dir = args.edl.parent
     out_dir = args.out_dir or (edit_dir / "verify")
 
-    overlays = edl.get("overlays") or []
+    if args.scaffold:
+        dest = args.manifest or (edit_dir / MANIFEST_NAME)
+        if dest.exists():
+            print(f"{dest} already exists — refusing to overwrite it.", file=sys.stderr)
+            sys.exit(1)
+        scaffold_manifest(edl, edit_dir, dest, args.width)
+        return
+
+    manifest = load_manifest(edit_dir, args.manifest, args.no_manifest)
+    target_width = manifest_target_width(manifest, args.width)
+
+    overlays = list(enumerate(edl.get("overlays") or []))
     if not overlays:
         print("No overlays in this EDL — nothing to gate.")
         return
+
+    all_problems: list[str] = []
+
+    if manifest:
+        matched, _, _ = pair_assets(manifest, edl, edit_dir)
+        plan_problems, plan_info = check_manifest(manifest, edl, edit_dir)
+        all_problems.extend(plan_problems)
+        print(f"Manifest: {args.manifest or (edit_dir / MANIFEST_NAME)}")
+        for line in plan_info:
+            print(f"  {line}")
+    else:
+        matched = {}
+        if not args.no_manifest:
+            print(f"No {MANIFEST_NAME} beside the EDL — checking against the EDL alone.")
+            print(f"  The manifest is the plan the user approved before generation ran; "
+                  f"without it the gate cannot tell a delivered asset from an unapproved one.")
+            print(f"  `--scaffold` writes a starter one from this EDL.")
+
     if args.slot:
         overlays = [overlays[args.slot - 1]]
 
@@ -372,19 +615,19 @@ def main() -> None:
               file=sys.stderr)
 
     print(f"Asset check: {len(overlays)} overlay(s) → {out_dir}")
-    all_problems: list[str] = []
     with tempfile.TemporaryDirectory() as td:
         tmp = Path(td)
-        for i, ov in enumerate(overlays, start=1):
-            _, problems = check_overlay(i, ov, edl, spans, edit_dir, out_dir,
-                                        args.n_frames, args.width, tmp)
+        for i, ov in overlays:
+            _, problems = check_overlay(i + 1, ov, edl, spans, edit_dir, out_dir,
+                                        args.n_frames, target_width, tmp,
+                                        spec=matched.get(i))
             all_problems.extend(problems)
 
     print()
     if all_problems:
         print(f"{len(all_problems)} problem(s) — fix before assembly:")
-        for p in all_problems:
-            print(f"  ! {p}")
+        for prob in all_problems:
+            print(f"  ! {prob}")
         sys.exit(1)
     print("All overlays pass the spec gate. Read the sheets before rendering:")
     print("  legibility over the real background, collision with the subtitle band,")

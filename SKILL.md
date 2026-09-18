@@ -45,6 +45,7 @@ The skill lives in `video-use/`. User footage lives wherever they put it. All se
     ├── project.md               ← memory; appended every session
     ├── takes_packed.md          ← phrase-level transcripts, the LLM's primary reading view
     ├── edl.json                 ← cut decisions
+    ├── assets.json              ← asset manifest; approved BEFORE anything is built
     ├── transcripts/<name>.json  ← cached raw Scribe JSON
     ├── animations/slot_<id>/    ← per-animation source + render + reasoning
     ├── clips_graded/            ← per-segment extracts with grade + fades
@@ -75,7 +76,7 @@ Helpers (`helpers/transcribe.py`, `helpers/render.py`, etc.) live alongside this
 - **`transcribe_batch.py <videos_dir>`** — 4-worker parallel transcription. Use for multi-take.
 - **`pack_transcripts.py --edit-dir <dir>`** — `transcripts/*.json` → `takes_packed.md` (phrase-level, break on silence ≥ 0.5s).
 - **`timeline_view.py <video> <start> <end>`** — filmstrip + waveform PNG. On-demand visual drill-down. **Not a scan tool** — use it at decision points, not constantly.
-- **`asset_check.py <edl.json>`** — asset gate. Composites every overlay onto the source frames actually live under its window, draws the subtitle safe band, and writes a contact sheet per slot to `<edit>/verify/`. Checks duration/resolution/window against the EDL and exits non-zero on mismatch. Run it after the animation agents return, before `render.py`. `--slot N`, `--n-frames N`, `--width N`.
+- **`asset_check.py <edl.json>`** — asset gate. Composites every overlay onto the source frames actually live under its window, draws the subtitle safe band, and writes a contact sheet per slot to `<edit>/verify/`. Checks duration/resolution/window against the EDL **and against `assets.json` when it exists** — unapproved overlays, planned-but-unused assets, generated assets with no headroom, and an unsigned-off manifest all fail the gate. Exits non-zero on any mismatch. Run it after the animation agents return, before `render.py`. `--slot N`, `--n-frames N`, `--width N`, `--manifest PATH`, `--no-manifest`, `--scaffold` (starter manifest from an existing EDL — migration aid only).
 - **`render.py <edl.json> -o <out>`** — per-segment extract → concat → overlays (PTS-shifted) → subtitles LAST. `--preview` for 720p fast. `--build-subtitles` to generate master.srt inline.
 - **`grade.py <in> -o <out>`** — ffmpeg filter chain grade. Presets + `--filter '<raw>'` for custom.
 - **`remotion_studio.sh [slot_dir]`** — scaffold (if missing) and launch Remotion Studio inside an animation slot on a genuinely free port. Local machine only — Studio serves on `localhost`, so a remote/SSH shell serves the wrong machine. `--check` verifies prereqs and scaffolds without launching.
@@ -87,7 +88,7 @@ For animations, create `<edit>/animations/slot_<id>/` with `Bash` and spawn a su
 1. **Inventory.** `ffprobe` every source. `transcribe_batch.py` on the directory. `pack_transcripts.py` to produce `takes_packed.md`. Sample one or two `timeline_view`s for a visual first impression.
 2. **Pre-scan for problems.** One pass over `takes_packed.md` to note verbal slips, obvious mis-speaks, or phrasings to avoid. Plain list, feed into the editor brief.
 3. **Converse.** Describe what you see in plain English. Ask questions *shaped by the material*. Collect: content type, target length/aspect, aesthetic/brand direction, pacing feel, must-preserve moments, must-cut moments, animation and grade preferences, subtitle needs. Do not use a fixed checklist — the right questions are different every time.
-4. **Propose strategy.** 4–8 sentences: shape, take choices, cut direction, animation plan, grade direction, subtitle style, length estimate. **Wait for confirmation.**
+4. **Propose strategy.** 4–8 sentences: shape, take choices, cut direction, animation plan, grade direction, subtitle style, length estimate. If the edit has animations, write `assets.json` now — the asset manifest is part of what the user is approving, and it has to be settled *before* anything is built. **Wait for confirmation, then set `approved`.**
 5. **Execute.** Produce `edl.json` via the editor sub-agent brief. Drill into `timeline_view` at ambiguous moments. Build animations in parallel sub-agents. Apply grade per-segment. Stop before compositing — the gate comes first.
 6. **Asset gate (before assembly).** Run `asset_check.py <edl.json>`. An overlay can render perfectly on its own and still be wrong in the edit — illegible over the footage under it, colliding with the subtitle band, or the wrong duration for its window. Fix at the slot level and re-run until clean. One slot re-render here is far cheaper than finding the same problem at preview or self-eval. See `references/assets-and-assembly.md`.
 7. **Compose + preview.** `render.py --preview`.
@@ -289,6 +290,46 @@ One sub-agent = one file (unique filenames, parallel agents don't overwrite each
 ## Output spec
 
 Match the source unless the user asked for something specific. Common targets: `1920×1080@24` cinematic, `1920×1080@30` screen content, `1080×1920@30` vertical social, `3840×2160@24` 4K cinema, `1080×1080@30` square. `render.py` defaults the scale to 1080p from any source; pass `--filter` or edit the extract command for other targets. Worth asking the user which delivery format matters.
+
+## Asset manifest — `assets.json`
+
+The plan the user approved before any asset was built. It is the consistency contract across parallel sub-agents (they cannot see each other, so identical concrete values in every brief is the only mechanism you have), and the count the gate checks the delivery against.
+
+```json
+{
+  "version": 1,
+  "concept": {
+    "summary": "warm editorial, single orange accent on near-black",
+    "palette": {"bg": "#0A0A0A", "accent": "#FF5A00", "dim": "#6E6E6E"},
+    "font": "/System/Library/Fonts/Menlo.ttc#1",
+    "constraints": ["<=2 accent colors", "~40% empty space"]
+  },
+  "target": {"width": 1920, "height": 1080, "fps": 30},
+  "assets": [
+    {"id": "slot_1", "kind": "authored", "engine": "pil",
+     "file": "animations/slot_1/render.mp4",
+     "width": 1920, "height": 1080, "fps": 30, "duration_s": 5.0,
+     "purpose": "counter card", "constraint": "clear of the subtitle band",
+     "attempts": 1, "discarded": 0},
+    {"id": "slot_2", "kind": "generated", "engine": "external",
+     "file": "animations/slot_2/render.mp4",
+     "width": 1920, "height": 1080, "fps": 30, "duration_s": 4.0, "headroom_s": 2.0,
+     "purpose": "background plate", "constraint": "negative space in the right third",
+     "attempts": 3, "discarded": 2}
+  ],
+  "approved": "2026-09-18"
+}
+```
+
+- **`concept`** — the shared visual contract. Copy these exact values into every sub-agent brief.
+- **`kind`** — `authored` (PIL / Remotion / HyperFrames / Manim: deterministic, free to re-render, built to an exact window) or `generated` (paid, non-deterministic: generate loose material and cut into it).
+- **`duration_s`** — the window the asset is built for. Must match the EDL overlay's `duration`.
+- **`headroom_s`** — extra material beyond the window, `generated` only. Zero headroom locks the timing before you have seen the asset in context; the gate warns about it.
+- **`constraint`** — what the asset has to leave room for. Required; the gate fails an entry without one.
+- **`attempts` / `discarded`** — generation cost accounting. Every unused generation still belongs in the total.
+- **`approved`** — set only once the user has confirmed the plan. The gate fails a manifest without it, because that means assets were built before the plan was signed off.
+
+Full rationale: `references/assets-and-assembly.md`.
 
 ## EDL format
 

@@ -87,22 +87,62 @@ asset generated to exactly 5.00s locks the timing before you've seen it in conte
 He specifies **one background image and two short supporting clips** — a count, before
 anything runs. Not "generate some supporting visuals."
 
-Do the same: before spawning any generation, write the manifest and get it confirmed in the
-strategy step.
+Do the same: before spawning any generation, write `<edit>/assets.json` and get it confirmed
+in the strategy step. It is a real artifact, not a note — `asset_check.py` reads it and
+checks the delivery against it.
 
-```
-slot_1  background plate   1920×1080  still   — negative space right third for product
-slot_2  supporting clip    1920×1080  ~4s     — motion, no product, matches slot_1 light
-slot_3  supporting clip    1920×1080  ~4s     — detail/texture, same palette
-source  product photo (user-supplied, untouched)
+```json
+{
+  "version": 1,
+  "concept": {
+    "summary": "premium, cool daylight, single product hero on deep neutral",
+    "palette": {"bg": "#101216", "accent": "#C8A46A"},
+    "font": "/System/Library/Fonts/Helvetica.ttc#1",
+    "constraints": ["no competing product colors", "one light direction: key from camera left"]
+  },
+  "target": {"width": 1920, "height": 1080, "fps": 30},
+  "assets": [
+    {"id": "slot_1", "kind": "generated", "engine": "external",
+     "file": "animations/slot_1/render.mp4",
+     "width": 1920, "height": 1080, "fps": 30,
+     "duration_s": 4.0, "headroom_s": 2.0,
+     "purpose": "background plate",
+     "constraint": "negative space in the right third for the product, room for a title",
+     "attempts": 1, "discarded": 0},
+    {"id": "slot_2", "kind": "generated", "engine": "external",
+     "file": "animations/slot_2/render.mp4",
+     "width": 1920, "height": 1080, "fps": 30,
+     "duration_s": 3.0, "headroom_s": 1.5,
+     "purpose": "supporting motion, no product",
+     "constraint": "same key direction as slot_1, no text-competing detail",
+     "attempts": 1, "discarded": 0}
+  ],
+  "approved": null
+}
 ```
 
-Three things the manifest buys:
+`approved` stays `null` until the user confirms — and the gate fails on a `null`, because a
+manifest that was never signed off means assets got built before the plan existed. `kind`
+picks the mode from §6. `headroom_s` is the material beyond the window that §3 says to
+over-generate; zero headroom means the timing is locked before you have seen the asset in
+context. `constraint` is required — an asset with no stated constraint has no test to fail.
+`attempts` / `discarded` carry the cost accounting in §8.
+
+Four things the manifest buys:
 - The user can veto the *plan* for ~zero cost, instead of vetoing the *output* after paying.
-- It's the consistency contract — every parallel sub-agent gets the identical palette,
-  light direction, and framing constraint, which is the only mechanism enforcing "keep the
-  assets consistent" across agents that can't see each other.
-- It becomes the count you check against. Three assets asked for, three assets reviewed.
+- It's the consistency contract — every parallel sub-agent gets the identical palette, light
+  direction, and framing constraint, which is the only mechanism enforcing "keep the assets
+  consistent" across agents that can't see each other. Copy `concept` verbatim into each brief.
+- It becomes the count you check against. Three assets asked for, three assets reviewed —
+  and the gate flags both directions: a planned asset that never reaches the edit (paid for,
+  wasted) and an overlay in the EDL that was never in the manifest (unapproved).
+- It records what generation actually cost, including the attempts you threw away.
+
+Adopting it on a project that already has an EDL: `asset_check.py <edl.json> --scaffold`
+writes a starter manifest from the existing overlays with the judgement fields left as
+`TODO`. That's a migration aid — the normal path is manifest first, generation second. The
+gate treats a leftover `TODO` as unfilled, so a scaffold you never completed fails loudly
+instead of passing silently.
 
 ## 5. The asset gate
 
@@ -128,6 +168,11 @@ For `video-use` the equivalent failure modes are concrete and mostly mechanical:
 | Render duration ≠ the EDL window | spec check |
 | Render resolution ≠ target (overlay anchors 0,0, won't fill) | spec check |
 | Window runs past the end of the timeline | spec check |
+| Delivered spec ≠ the approved manifest entry | manifest check |
+| Generated asset with no headroom to re-cut into | manifest check |
+| Planned asset that never reaches the edit | manifest check |
+| Overlay in the edit that was never approved | manifest check |
+| Generation ran before the plan was signed off | manifest check |
 | Assets don't match each other | eye, sheets side by side |
 
 `helpers/asset_check.py` does this. It walks the EDL's output timeline to find which source
@@ -199,19 +244,18 @@ set.
 ## Checklist
 
 Before generating:
-- [ ] Manifest written: count, kind, resolution, duration, per-asset composition constraint
-- [ ] Consistency contract stated as concrete values, identical across every sub-agent
-- [ ] Generative slots specified slightly longer than their window
+- [ ] `<edit>/assets.json` written: count, kind, resolution, duration, per-asset constraint
+- [ ] `concept` stated as concrete values, copied verbatim into every sub-agent brief
+- [ ] Generated slots carry `headroom_s` > 0
 - [ ] No edit decisions inside a generation prompt
-- [ ] User confirmed the manifest
+- [ ] User confirmed the manifest and `approved` is set
 
 After generating, before assembly:
 - [ ] `asset_check.py` clean (spec gate passes)
 - [ ] Contact sheets read: legible over real footage, clear of the subtitle band, grade-consistent
 - [ ] Assets look like one campaign when viewed together
-- [ ] Asset count matches the manifest
 
 On revision:
 - [ ] Walked the re-select → re-time → re-place → re-render → re-generate ladder in order
 - [ ] Any re-generation has a stated reason
-- [ ] Discarded generations recorded in `project.md`
+- [ ] Discarded generations recorded in the manifest's `discarded` counts
