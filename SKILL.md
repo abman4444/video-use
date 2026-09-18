@@ -100,6 +100,22 @@ For animations, create `<edit>/animations/slot_<id>/` with `Bash` and spawn a su
    If anything fails: fix → re-render → re-eval. **Cap at 3 self-eval passes** — if issues remain after 3, flag them to the user rather than looping forever. Only present the preview once the self-eval passes.
 8. **Iterate + persist.** Natural-language feedback, re-plan, re-render. Never re-transcribe. Final render on confirmation. Append to `project.md`.
 
+## Revisions and variants
+
+Iteration (step 8) is where most of the real work happens — the first render is rarely the deliverable. Structure every revision request as **stays / changes / timing**:
+
+1. **Stays** — name explicitly everything that must carry over (style, palette, character design, camera, product treatment, the scenes you are not touching). A long preserve-list is what stops a revision drifting into a rewrite.
+2. **Changes** — the one thing being adjusted, plus any dependent track. If a beat moves, its overlay sync and its audio move with it; nothing re-syncs itself.
+3. **Timing** — restate the target duration even when it is unchanged. Revisions hold the runtime, because the surrounding edit is already built around it. When a hold gets longer inside a fixed duration, find what got shorter and verify it still reads.
+
+**Never overwrite a version.** Save each variant separately (`final_v2.mp4`, `edl_v2.json`, `animations/slot_x/render_v2.mp4`) and keep the old one in the project. Variants are deliverables, not clutter — an alternative opening and a vertical cut are two more things to hand over, not two drafts.
+
+**Comparing variants:** extract the *same* timestamps from both via `timeline_view`, and state the criterion before presenting them ("watch how each opening leads into the section we kept"). Do not hand the user two files and ask which they prefer.
+
+**Reformatting is recomposition, not cropping.** A 9:16 version re-lays-out every scene: element that sat beside the title may need to sit above it, text has to stay readable small, the subject should be clear within the first second, and the sequence should read muted. Check it muted first, then with sound — two different failure modes.
+
+Longer treatment, with the briefing structure and worked examples: `references/directing-revisions.md`.
+
 ## Cut craft (techniques)
 
 - **Audio-first.** Candidate cuts from word boundaries and silence gaps.
