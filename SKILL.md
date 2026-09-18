@@ -75,6 +75,7 @@ Helpers (`helpers/transcribe.py`, `helpers/render.py`, etc.) live alongside this
 - **`transcribe_batch.py <videos_dir>`** — 4-worker parallel transcription. Use for multi-take.
 - **`pack_transcripts.py --edit-dir <dir>`** — `transcripts/*.json` → `takes_packed.md` (phrase-level, break on silence ≥ 0.5s).
 - **`timeline_view.py <video> <start> <end>`** — filmstrip + waveform PNG. On-demand visual drill-down. **Not a scan tool** — use it at decision points, not constantly.
+- **`asset_check.py <edl.json>`** — asset gate. Composites every overlay onto the source frames actually live under its window, draws the subtitle safe band, and writes a contact sheet per slot to `<edit>/verify/`. Checks duration/resolution/window against the EDL and exits non-zero on mismatch. Run it after the animation agents return, before `render.py`. `--slot N`, `--n-frames N`, `--width N`.
 - **`render.py <edl.json> -o <out>`** — per-segment extract → concat → overlays (PTS-shifted) → subtitles LAST. `--preview` for 720p fast. `--build-subtitles` to generate master.srt inline.
 - **`grade.py <in> -o <out>`** — ffmpeg filter chain grade. Presets + `--filter '<raw>'` for custom.
 - **`remotion_studio.sh [slot_dir]`** — scaffold (if missing) and launch Remotion Studio inside an animation slot on a genuinely free port. Local machine only — Studio serves on `localhost`, so a remote/SSH shell serves the wrong machine. `--check` verifies prereqs and scaffolds without launching.
@@ -87,9 +88,10 @@ For animations, create `<edit>/animations/slot_<id>/` with `Bash` and spawn a su
 2. **Pre-scan for problems.** One pass over `takes_packed.md` to note verbal slips, obvious mis-speaks, or phrasings to avoid. Plain list, feed into the editor brief.
 3. **Converse.** Describe what you see in plain English. Ask questions *shaped by the material*. Collect: content type, target length/aspect, aesthetic/brand direction, pacing feel, must-preserve moments, must-cut moments, animation and grade preferences, subtitle needs. Do not use a fixed checklist — the right questions are different every time.
 4. **Propose strategy.** 4–8 sentences: shape, take choices, cut direction, animation plan, grade direction, subtitle style, length estimate. **Wait for confirmation.**
-5. **Execute.** Produce `edl.json` via the editor sub-agent brief. Drill into `timeline_view` at ambiguous moments. Build animations in parallel sub-agents. Apply grade per-segment. Compose via `render.py`.
-6. **Preview.** `render.py --preview`.
-7. **Self-eval (before showing the user).** Run `timeline_view` on the **rendered output** (not the sources) at every cut boundary (±1.5s window). Check each image for:
+5. **Execute.** Produce `edl.json` via the editor sub-agent brief. Drill into `timeline_view` at ambiguous moments. Build animations in parallel sub-agents. Apply grade per-segment. Stop before compositing — the gate comes first.
+6. **Asset gate (before assembly).** Run `asset_check.py <edl.json>`. An overlay can render perfectly on its own and still be wrong in the edit — illegible over the footage under it, colliding with the subtitle band, or the wrong duration for its window. Fix at the slot level and re-run until clean. One slot re-render here is far cheaper than finding the same problem at preview or self-eval. See `references/assets-and-assembly.md`.
+7. **Compose + preview.** `render.py --preview`.
+8. **Self-eval (before showing the user).** Run `timeline_view` on the **rendered output** (not the sources) at every cut boundary (±1.5s window). Check each image for:
    - Visual discontinuity / flash / jump at the cut
    - Waveform spike at the boundary (audio pop that slipped past the 30ms fade)
    - Subtitle hidden behind an overlay (Rule 1 violation)
@@ -98,7 +100,7 @@ For animations, create `<edit>/animations/slot_<id>/` with `Bash` and spawn a su
    Also sample: first 2s, last 2s, and 2–3 mid-points — check grade consistency, subtitle readability, overall coherence. Run `ffprobe` on the output to verify duration matches the EDL expectation.
 
    If anything fails: fix → re-render → re-eval. **Cap at 3 self-eval passes** — if issues remain after 3, flag them to the user rather than looping forever. Only present the preview once the self-eval passes.
-8. **Iterate + persist.** Natural-language feedback, re-plan, re-render. Never re-transcribe. Final render on confirmation. Append to `project.md`.
+9. **Iterate + persist.** Natural-language feedback, re-plan, re-render. Never re-transcribe. Final render on confirmation. Append to `project.md`.
 
 ## Revisions and variants
 
@@ -214,6 +216,12 @@ Invent a third style if neither fits. Hard rules: subtitles LAST (Rule 1), outpu
 ## Animations (when requested)
 
 Animations match the content and the brand. **Get the palette, font, and visual language from the conversation** — never assume a default. If the user hasn't told you, propose a palette in the strategy phase and wait for confirmation before building anything.
+
+**Separate generation from assembly.** Decide the assets first, as a manifest — count, kind, resolution, duration, and the composition constraint each one has to satisfy (negative space for a subject, room for readable text) — and get it confirmed before anything is built. Then assembly makes the edit decisions: which moments get used, in/out points, ordering, scale, transitions, sound.
+
+Never put an edit decision inside a generation prompt. "Generate the opening shot" bakes a cut decision into the step that is slowest to redo; ask for material and cut the opening out of it. This matters most for paid, non-deterministic generators (where over-generating slightly and cutting in beats generating to an exact length), but the manifest is what enforces consistency across parallel sub-agents in every case — they cannot see each other, so identical concrete values in each brief is the only mechanism you have.
+
+On revision, walk the ladder and stop at the first step that works: **re-select → re-time → re-place → re-render an authored slot → re-generate.** If requests keep forcing a re-generation, the manifest was too tightly bound to one edit. Full treatment: `references/assets-and-assembly.md`.
 
 **Tool options:**
 
