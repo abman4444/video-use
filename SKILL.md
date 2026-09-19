@@ -45,6 +45,7 @@ The skill lives in `video-use/`. User footage lives wherever they put it. All se
     ├── project.md               ← memory; appended every session
     ├── takes_packed.md          ← phrase-level transcripts, the LLM's primary reading view
     ├── edl.json                 ← cut decisions
+    ├── assets.json              ← asset manifest; approved BEFORE anything is built
     ├── transcripts/<name>.json  ← cached raw Scribe JSON
     ├── animations/slot_<id>/    ← per-animation source + render + reasoning
     ├── clips_graded/            ← per-segment extracts with grade + fades
@@ -75,6 +76,8 @@ Helpers (`helpers/transcribe.py`, `helpers/render.py`, etc.) live alongside this
 - **`transcribe_batch.py <videos_dir>`** — 4-worker parallel transcription. Use for multi-take.
 - **`pack_transcripts.py --edit-dir <dir>`** — `transcripts/*.json` → `takes_packed.md` (phrase-level, break on silence ≥ 0.5s).
 - **`timeline_view.py <video> <start> <end>`** — filmstrip + waveform PNG. On-demand visual drill-down. **Not a scan tool** — use it at decision points, not constantly.
+- **`project_notes.py <edit_dir>`** — session handoff. Read-only by default: re-scans the project and checks that everything `edl.json` and `assets.json` point at still exists and that the tooling a resume needs is available. Run it on cold start **before trusting the notes**. `--refresh` rewrites the state block at the top of `project.md` and never touches the session log below it. `--title`, `--json`.
+- **`asset_check.py <edl.json>`** — asset gate. Composites every overlay onto the source frames actually live under its window, draws the subtitle safe band, and writes a contact sheet per slot to `<edit>/verify/`. Checks duration/resolution/window against the EDL **and against `assets.json` when it exists** — unapproved overlays, planned-but-unused assets, generated assets with no headroom, and an unsigned-off manifest all fail the gate. Exits non-zero on any mismatch. Run it after the animation agents return, before `render.py`. `--slot N`, `--n-frames N`, `--width N`, `--manifest PATH`, `--no-manifest`, `--scaffold` (starter manifest from an existing EDL — migration aid only).
 - **`render.py <edl.json> -o <out>`** — per-segment extract → concat → overlays (PTS-shifted) → subtitles LAST. `--preview` for 720p fast. `--build-subtitles` to generate master.srt inline.
 - **`grade.py <in> -o <out>`** — ffmpeg filter chain grade. Presets + `--filter '<raw>'` for custom.
 - **`remotion_studio.sh [slot_dir]`** — scaffold (if missing) and launch Remotion Studio inside an animation slot on a genuinely free port. Local machine only — Studio serves on `localhost`, so a remote/SSH shell serves the wrong machine. `--check` verifies prereqs and scaffolds without launching.
@@ -83,13 +86,14 @@ For animations, create `<edit>/animations/slot_<id>/` with `Bash` and spawn a su
 
 ## The process
 
-1. **Inventory.** `ffprobe` every source. `transcribe_batch.py` on the directory. `pack_transcripts.py` to produce `takes_packed.md`. Sample one or two `timeline_view`s for a visual first impression.
+1. **Inventory (or reconnect).** On a returning project, run `project_notes.py <edit_dir>` first — it verifies the environment against what the project actually references and fails loudly on drift (sources moved, a slot render deleted, transcripts cleared). Only then read `project.md`. On a fresh project: `ffprobe` every source, `transcribe_batch.py` on the directory, `pack_transcripts.py` to produce `takes_packed.md`, and sample one or two `timeline_view`s for a visual first impression.
 2. **Pre-scan for problems.** One pass over `takes_packed.md` to note verbal slips, obvious mis-speaks, or phrasings to avoid. Plain list, feed into the editor brief.
 3. **Converse.** Describe what you see in plain English. Ask questions *shaped by the material*. Collect: content type, target length/aspect, aesthetic/brand direction, pacing feel, must-preserve moments, must-cut moments, animation and grade preferences, subtitle needs. Do not use a fixed checklist — the right questions are different every time.
-4. **Propose strategy.** 4–8 sentences: shape, take choices, cut direction, animation plan, grade direction, subtitle style, length estimate. **Wait for confirmation.**
-5. **Execute.** Produce `edl.json` via the editor sub-agent brief. Drill into `timeline_view` at ambiguous moments. Build animations in parallel sub-agents. Apply grade per-segment. Compose via `render.py`.
-6. **Preview.** `render.py --preview`.
-7. **Self-eval (before showing the user).** Run `timeline_view` on the **rendered output** (not the sources) at every cut boundary (±1.5s window). Check each image for:
+4. **Propose strategy.** 4–8 sentences: shape, take choices, cut direction, animation plan, grade direction, subtitle style, length estimate. If the edit has animations, write `assets.json` now — the asset manifest is part of what the user is approving, and it has to be settled *before* anything is built. **Wait for confirmation, then set `approved`.**
+5. **Execute.** Produce `edl.json` via the editor sub-agent brief. Drill into `timeline_view` at ambiguous moments. Build animations in parallel sub-agents. Apply grade per-segment. Stop before compositing — the gate comes first.
+6. **Asset gate (before assembly).** Run `asset_check.py <edl.json>`. An overlay can render perfectly on its own and still be wrong in the edit — illegible over the footage under it, colliding with the subtitle band, or the wrong duration for its window. Fix at the slot level and re-run until clean. One slot re-render here is far cheaper than finding the same problem at preview or self-eval. See `references/assets-and-assembly.md`.
+7. **Compose + preview.** `render.py --preview`.
+8. **Self-eval (before showing the user).** Run `timeline_view` on the **rendered output** (not the sources) at every cut boundary (±1.5s window). Check each image for:
    - Visual discontinuity / flash / jump at the cut
    - Waveform spike at the boundary (audio pop that slipped past the 30ms fade)
    - Subtitle hidden behind an overlay (Rule 1 violation)
@@ -98,7 +102,23 @@ For animations, create `<edit>/animations/slot_<id>/` with `Bash` and spawn a su
    Also sample: first 2s, last 2s, and 2–3 mid-points — check grade consistency, subtitle readability, overall coherence. Run `ffprobe` on the output to verify duration matches the EDL expectation.
 
    If anything fails: fix → re-render → re-eval. **Cap at 3 self-eval passes** — if issues remain after 3, flag them to the user rather than looping forever. Only present the preview once the self-eval passes.
-8. **Iterate + persist.** Natural-language feedback, re-plan, re-render. Never re-transcribe. Final render on confirmation. Append to `project.md`.
+9. **Iterate + persist.** Natural-language feedback, re-plan, re-render. Never re-transcribe. Final render on confirmation. Append this session's entry to `project.md`, then `project_notes.py <edit_dir> --refresh` so the next session reconnects to the project as it now is.
+
+## Revisions and variants
+
+Iteration (step 8) is where most of the real work happens — the first render is rarely the deliverable. Structure every revision request as **stays / changes / timing**:
+
+1. **Stays** — name explicitly everything that must carry over (style, palette, character design, camera, product treatment, the scenes you are not touching). A long preserve-list is what stops a revision drifting into a rewrite.
+2. **Changes** — the one thing being adjusted, plus any dependent track. If a beat moves, its overlay sync and its audio move with it; nothing re-syncs itself.
+3. **Timing** — restate the target duration even when it is unchanged. Revisions hold the runtime, because the surrounding edit is already built around it. When a hold gets longer inside a fixed duration, find what got shorter and verify it still reads.
+
+**Never overwrite a version.** Save each variant separately (`final_v2.mp4`, `edl_v2.json`, `animations/slot_x/render_v2.mp4`) and keep the old one in the project. Variants are deliverables, not clutter — an alternative opening and a vertical cut are two more things to hand over, not two drafts.
+
+**Comparing variants:** extract the *same* timestamps from both via `timeline_view`, and state the criterion before presenting them ("watch how each opening leads into the section we kept"). Do not hand the user two files and ask which they prefer.
+
+**Reformatting is recomposition, not cropping.** A 9:16 version re-lays-out every scene: element that sat beside the title may need to sit above it, text has to stay readable small, the subject should be clear within the first second, and the sequence should read muted. Check it muted first, then with sound — two different failure modes.
+
+Longer treatment, with the briefing structure and worked examples: `references/directing-revisions.md`.
 
 ## Cut craft (techniques)
 
@@ -199,6 +219,12 @@ Invent a third style if neither fits. Hard rules: subtitles LAST (Rule 1), outpu
 
 Animations match the content and the brand. **Get the palette, font, and visual language from the conversation** — never assume a default. If the user hasn't told you, propose a palette in the strategy phase and wait for confirmation before building anything.
 
+**Separate generation from assembly.** Decide the assets first, as a manifest — count, kind, resolution, duration, and the composition constraint each one has to satisfy (negative space for a subject, room for readable text) — and get it confirmed before anything is built. Then assembly makes the edit decisions: which moments get used, in/out points, ordering, scale, transitions, sound.
+
+Never put an edit decision inside a generation prompt. "Generate the opening shot" bakes a cut decision into the step that is slowest to redo; ask for material and cut the opening out of it. This matters most for paid, non-deterministic generators (where over-generating slightly and cutting in beats generating to an exact length), but the manifest is what enforces consistency across parallel sub-agents in every case — they cannot see each other, so identical concrete values in each brief is the only mechanism you have.
+
+On revision, walk the ladder and stop at the first step that works: **re-select → re-time → re-place → re-render an authored slot → re-generate.** If requests keep forcing a re-generation, the manifest was too tightly bound to one edit. Full treatment: `references/assets-and-assembly.md`.
+
 **Tool options:**
 
 Pick the engine per animation slot. Do not default to Remotion just because the animation is web-adjacent.
@@ -266,6 +292,46 @@ One sub-agent = one file (unique filenames, parallel agents don't overwrite each
 
 Match the source unless the user asked for something specific. Common targets: `1920×1080@24` cinematic, `1920×1080@30` screen content, `1080×1920@30` vertical social, `3840×2160@24` 4K cinema, `1080×1080@30` square. `render.py` defaults the scale to 1080p from any source; pass `--filter` or edit the extract command for other targets. Worth asking the user which delivery format matters.
 
+## Asset manifest — `assets.json`
+
+The plan the user approved before any asset was built. It is the consistency contract across parallel sub-agents (they cannot see each other, so identical concrete values in every brief is the only mechanism you have), and the count the gate checks the delivery against.
+
+```json
+{
+  "version": 1,
+  "concept": {
+    "summary": "warm editorial, single orange accent on near-black",
+    "palette": {"bg": "#0A0A0A", "accent": "#FF5A00", "dim": "#6E6E6E"},
+    "font": "/System/Library/Fonts/Menlo.ttc#1",
+    "constraints": ["<=2 accent colors", "~40% empty space"]
+  },
+  "target": {"width": 1920, "height": 1080, "fps": 30},
+  "assets": [
+    {"id": "slot_1", "kind": "authored", "engine": "pil",
+     "file": "animations/slot_1/render.mp4",
+     "width": 1920, "height": 1080, "fps": 30, "duration_s": 5.0,
+     "purpose": "counter card", "constraint": "clear of the subtitle band",
+     "attempts": 1, "discarded": 0},
+    {"id": "slot_2", "kind": "generated", "engine": "external",
+     "file": "animations/slot_2/render.mp4",
+     "width": 1920, "height": 1080, "fps": 30, "duration_s": 4.0, "headroom_s": 2.0,
+     "purpose": "background plate", "constraint": "negative space in the right third",
+     "attempts": 3, "discarded": 2}
+  ],
+  "approved": "2026-09-18"
+}
+```
+
+- **`concept`** — the shared visual contract. Copy these exact values into every sub-agent brief.
+- **`kind`** — `authored` (PIL / Remotion / HyperFrames / Manim: deterministic, free to re-render, built to an exact window) or `generated` (paid, non-deterministic: generate loose material and cut into it).
+- **`duration_s`** — the window the asset is built for. Must match the EDL overlay's `duration`.
+- **`headroom_s`** — extra material beyond the window, `generated` only. Zero headroom locks the timing before you have seen the asset in context; the gate warns about it.
+- **`constraint`** — what the asset has to leave room for. Required; the gate fails an entry without one.
+- **`attempts` / `discarded`** — generation cost accounting. Every unused generation still belongs in the total.
+- **`approved`** — set only once the user has confirmed the plan. The gate fails a manifest without it, because that means assets were built before the plan was signed off.
+
+Full rationale: `references/assets-and-assembly.md`.
+
 ## EDL format
 
 ```json
@@ -291,7 +357,11 @@ Match the source unless the user asked for something specific. Common targets: `
 
 ## Memory — `project.md`
 
-Append one section per session at `<edit>/project.md`:
+`project.md` has two parts, and they have opposite update rules.
+
+**1. The state block** (top, between the `project-notes:state` markers). The project as it is *right now*, and how to reconnect to it: where the sources live, which transcripts are cached, what was approved, what has already been delivered. Rewritten every session by `project_notes.py --refresh`. Never edit it by hand — it is derived from disk.
+
+**2. The session log** (below it). One section per session, appended, never rewritten:
 
 ```markdown
 ## Session N — YYYY-MM-DD
@@ -302,7 +372,11 @@ Append one section per session at `<edit>/project.md`:
 **Outstanding:** deferred items
 ```
 
-On startup, read `project.md` if it exists and summarize the last session in one sentence before asking whether to continue.
+Decisions alone are not a handoff. A cold session that knows *what was decided* but not *where the sources are, what is already cached, or which variants exist* will re-transcribe, re-generate, and overwrite. The state block is what stops that.
+
+**On startup:** run `project_notes.py <edit_dir>` **before** reading the notes. It re-derives the truth from disk and the project's own JSON rather than parsing prose, so notes that have drifted cannot mislead you — a moved source, a deleted slot render, or a cleared transcript cache is a blocker, not a surprise you hit mid-render. Once it passes, read `project.md` and summarize the last session in one sentence before asking how to continue.
+
+**On the way out:** append the session entry, then `--refresh`.
 
 ## Anti-patterns
 
