@@ -156,9 +156,40 @@ the project name into the project notes**, and opens the next chat with:
 > "Read the project notes, reconnect to the same Resolve project, and confirm Higgsfield is
 > available in this channel."
 
-This is exactly what `project.md` is for, and it validates the design. Worth adopting the
-detail we're missing: the notes should carry **how to re-establish the environment**, not
-just what was decided. Project name, source paths, API/plugin availability, then decisions.
+This is exactly what `project.md` is for, and it validates the design — but note what he
+actually saves. Not "we chose the warm grade." He saves **the connection instructions and
+the project name**: the things a session with no memory needs in order to get back to a
+working state at all. Decisions come after.
+
+That is the detail worth stealing. A handoff that records only decisions produces a session
+that knows *what* was chosen but not *where the sources are, what is already cached, or
+which variants exist* — so it re-transcribes, re-generates, and overwrites. Three of those
+are expensive and one is destructive.
+
+Note also that his resume prompt is not "read the notes." It is:
+
+> "Read the project notes, **reconnect** to the same Resolve project, and **confirm**
+> Higgsfield is available in this channel."
+
+Read, reconnect, confirm. He re-establishes and re-verifies the environment before doing any
+work in it — the same read-back discipline as §1, applied to a session boundary rather than
+a first connection. Notes describe the world as it was when they were written; the world may
+have moved.
+
+So `project.md` here carries two parts with opposite update rules: a **state block** at the
+top, rewritten every session and derived from disk (sources, cached transcripts, approved
+manifest, delivered variants, how to reconnect), and the **session log** below it, appended
+and never rewritten. `helpers/project_notes.py` owns the first and never touches the second:
+
+```bash
+python helpers/project_notes.py <edit_dir>            # verify — run on cold start
+python helpers/project_notes.py <edit_dir> --refresh  # rewrite the state block on the way out
+```
+
+Verify deliberately re-derives the truth from disk and the project's own JSON instead of
+parsing the prose, so notes that have drifted cannot mislead it. A moved source, a deleted
+slot render, a cleared transcript cache, or an asset plan that was never approved becomes a
+blocker at the start of the session rather than a surprise halfway through a render.
 
 ## 9. Reformatting is recomposition, not cropping
 

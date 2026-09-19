@@ -76,6 +76,7 @@ Helpers (`helpers/transcribe.py`, `helpers/render.py`, etc.) live alongside this
 - **`transcribe_batch.py <videos_dir>`** — 4-worker parallel transcription. Use for multi-take.
 - **`pack_transcripts.py --edit-dir <dir>`** — `transcripts/*.json` → `takes_packed.md` (phrase-level, break on silence ≥ 0.5s).
 - **`timeline_view.py <video> <start> <end>`** — filmstrip + waveform PNG. On-demand visual drill-down. **Not a scan tool** — use it at decision points, not constantly.
+- **`project_notes.py <edit_dir>`** — session handoff. Read-only by default: re-scans the project and checks that everything `edl.json` and `assets.json` point at still exists and that the tooling a resume needs is available. Run it on cold start **before trusting the notes**. `--refresh` rewrites the state block at the top of `project.md` and never touches the session log below it. `--title`, `--json`.
 - **`asset_check.py <edl.json>`** — asset gate. Composites every overlay onto the source frames actually live under its window, draws the subtitle safe band, and writes a contact sheet per slot to `<edit>/verify/`. Checks duration/resolution/window against the EDL **and against `assets.json` when it exists** — unapproved overlays, planned-but-unused assets, generated assets with no headroom, and an unsigned-off manifest all fail the gate. Exits non-zero on any mismatch. Run it after the animation agents return, before `render.py`. `--slot N`, `--n-frames N`, `--width N`, `--manifest PATH`, `--no-manifest`, `--scaffold` (starter manifest from an existing EDL — migration aid only).
 - **`render.py <edl.json> -o <out>`** — per-segment extract → concat → overlays (PTS-shifted) → subtitles LAST. `--preview` for 720p fast. `--build-subtitles` to generate master.srt inline.
 - **`grade.py <in> -o <out>`** — ffmpeg filter chain grade. Presets + `--filter '<raw>'` for custom.
@@ -85,7 +86,7 @@ For animations, create `<edit>/animations/slot_<id>/` with `Bash` and spawn a su
 
 ## The process
 
-1. **Inventory.** `ffprobe` every source. `transcribe_batch.py` on the directory. `pack_transcripts.py` to produce `takes_packed.md`. Sample one or two `timeline_view`s for a visual first impression.
+1. **Inventory (or reconnect).** On a returning project, run `project_notes.py <edit_dir>` first — it verifies the environment against what the project actually references and fails loudly on drift (sources moved, a slot render deleted, transcripts cleared). Only then read `project.md`. On a fresh project: `ffprobe` every source, `transcribe_batch.py` on the directory, `pack_transcripts.py` to produce `takes_packed.md`, and sample one or two `timeline_view`s for a visual first impression.
 2. **Pre-scan for problems.** One pass over `takes_packed.md` to note verbal slips, obvious mis-speaks, or phrasings to avoid. Plain list, feed into the editor brief.
 3. **Converse.** Describe what you see in plain English. Ask questions *shaped by the material*. Collect: content type, target length/aspect, aesthetic/brand direction, pacing feel, must-preserve moments, must-cut moments, animation and grade preferences, subtitle needs. Do not use a fixed checklist — the right questions are different every time.
 4. **Propose strategy.** 4–8 sentences: shape, take choices, cut direction, animation plan, grade direction, subtitle style, length estimate. If the edit has animations, write `assets.json` now — the asset manifest is part of what the user is approving, and it has to be settled *before* anything is built. **Wait for confirmation, then set `approved`.**
@@ -101,7 +102,7 @@ For animations, create `<edit>/animations/slot_<id>/` with `Bash` and spawn a su
    Also sample: first 2s, last 2s, and 2–3 mid-points — check grade consistency, subtitle readability, overall coherence. Run `ffprobe` on the output to verify duration matches the EDL expectation.
 
    If anything fails: fix → re-render → re-eval. **Cap at 3 self-eval passes** — if issues remain after 3, flag them to the user rather than looping forever. Only present the preview once the self-eval passes.
-9. **Iterate + persist.** Natural-language feedback, re-plan, re-render. Never re-transcribe. Final render on confirmation. Append to `project.md`.
+9. **Iterate + persist.** Natural-language feedback, re-plan, re-render. Never re-transcribe. Final render on confirmation. Append this session's entry to `project.md`, then `project_notes.py <edit_dir> --refresh` so the next session reconnects to the project as it now is.
 
 ## Revisions and variants
 
@@ -356,7 +357,11 @@ Full rationale: `references/assets-and-assembly.md`.
 
 ## Memory — `project.md`
 
-Append one section per session at `<edit>/project.md`:
+`project.md` has two parts, and they have opposite update rules.
+
+**1. The state block** (top, between the `project-notes:state` markers). The project as it is *right now*, and how to reconnect to it: where the sources live, which transcripts are cached, what was approved, what has already been delivered. Rewritten every session by `project_notes.py --refresh`. Never edit it by hand — it is derived from disk.
+
+**2. The session log** (below it). One section per session, appended, never rewritten:
 
 ```markdown
 ## Session N — YYYY-MM-DD
@@ -367,7 +372,11 @@ Append one section per session at `<edit>/project.md`:
 **Outstanding:** deferred items
 ```
 
-On startup, read `project.md` if it exists and summarize the last session in one sentence before asking whether to continue.
+Decisions alone are not a handoff. A cold session that knows *what was decided* but not *where the sources are, what is already cached, or which variants exist* will re-transcribe, re-generate, and overwrite. The state block is what stops that.
+
+**On startup:** run `project_notes.py <edit_dir>` **before** reading the notes. It re-derives the truth from disk and the project's own JSON rather than parsing prose, so notes that have drifted cannot mislead you — a moved source, a deleted slot render, or a cleared transcript cache is a blocker, not a surprise you hit mid-render. Once it passes, read `project.md` and summarize the last session in one sentence before asking how to continue.
+
+**On the way out:** append the session entry, then `--refresh`.
 
 ## Anti-patterns
 
