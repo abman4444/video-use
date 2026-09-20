@@ -1,0 +1,452 @@
+<title>6175 Toledo Place</title>
+<style>
+  :root {
+    --ink: #1b2430;
+    --ink-soft: #55616f;
+    --rule: #d8dde3;
+    --paper: #ffffff;
+    --band: #f3f5f7;
+    --accent: #1f4e79;
+    --accent-soft: #eaf0f6;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: #e9ecef;
+    color: var(--ink);
+    font-family: "Helvetica Neue", Arial, system-ui, sans-serif;
+    line-height: 1.45;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .sheet {
+    background: var(--paper);
+    width: 100%;
+    max-width: 8.5in;
+    margin: 18px auto;
+    padding: 0.55in 0.6in 0.5in;
+    border: 1px solid var(--rule);
+  }
+
+  /* ---------- Header ---------- */
+  .eyebrow {
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+    margin: 0 0 6px;
+  }
+
+  h1 {
+    font-size: 34px;
+    line-height: 1.1;
+    margin: 0 0 4px;
+    text-wrap: balance;
+  }
+
+  .city {
+    font-size: 17px;
+    color: var(--ink-soft);
+    margin: 0 0 14px;
+  }
+
+  .when {
+    background: var(--accent);
+    color: #fff;
+    padding: 12px 16px;
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: .3px;
+    margin-bottom: 16px;
+  }
+
+  .when small {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: .85;
+    margin-bottom: 2px;
+  }
+
+  /* ---------- Price + specs ---------- */
+  .price-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 10px 22px;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+  }
+
+  .price {
+    font-size: 30px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .specs {
+    font-size: 16px;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- Photo slot ---------- */
+  .photo {
+    border: 2px dashed var(--rule);
+    background: var(--band);
+    aspect-ratio: 16 / 9;
+    max-width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 13px;
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+
+  .photo img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* ---------- Body copy ---------- */
+  .blurb {
+    font-size: 14px;
+    margin: 0 0 16px;
+    max-width: 62ch;
+  }
+
+  h2 {
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 8px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .cols {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 18px 28px;
+    margin-bottom: 18px;
+  }
+
+  .facts {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 14px;
+  }
+
+  .facts li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 4px 0;
+    border-bottom: 1px dotted var(--rule);
+  }
+
+  .facts span:last-child {
+    font-weight: 600;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .bullets {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 14px;
+  }
+
+  .bullets li { padding: 2px 0; }
+
+  /* ---------- Agent ---------- */
+  .agent {
+    background: var(--accent-soft);
+    border-left: 5px solid var(--accent);
+    padding: 14px 18px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px 24px;
+  }
+
+  .agent-name { font-size: 19px; font-weight: 700; margin: 0; }
+  .agent-role { font-size: 13px; color: var(--ink-soft); margin: 2px 0 0; }
+
+  .agent-contact {
+    font-size: 15px;
+    font-weight: 600;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .agent-contact div { padding: 1px 0; }
+
+  .fineprint {
+    font-size: 10px;
+    color: var(--ink-soft);
+    margin-top: 14px;
+    line-height: 1.4;
+  }
+
+  /* ---------- Sign-in sheet ---------- */
+  .signin-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 8px;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+  }
+
+  .signin-head h1 { font-size: 26px; margin: 0; }
+  .signin-head p { margin: 0; font-size: 13px; color: var(--ink-soft); }
+
+  .note {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin: 10px 0 12px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  th {
+    background: var(--band);
+    text-align: left;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    padding: 7px 8px;
+    border: 1px solid var(--rule);
+  }
+
+  td {
+    border: 1px solid var(--rule);
+    height: 0.42in;
+    padding: 4px 8px;
+  }
+
+  .col-name { width: 26%; }
+  .col-email { width: 30%; }
+  .col-phone { width: 20%; }
+  .col-agent { width: 14%; }
+  .col-notes { width: 10%; }
+
+  .table-wrap { overflow-x: auto; }
+
+  /* ---------- Print ---------- */
+  @page { size: letter portrait; margin: 0.45in; }
+
+  @media print {
+    body { background: #fff; }
+    .sheet {
+      margin: 0;
+      border: 0;
+      padding: 0;
+      max-width: none;
+      page-break-after: always;
+    }
+    .sheet:last-child { page-break-after: auto; }
+    .no-print { display: none !important; }
+  }
+
+  .toolbar {
+    max-width: 8.5in;
+    margin: 18px auto 0;
+    padding: 0 0.6in;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .toolbar button {
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 9px 18px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+  }
+
+  .toolbar button.ghost { background: #fff; color: var(--accent); }
+  .toolbar button:focus-visible { outline: 3px solid #f0a202; outline-offset: 2px; }
+
+  @media (max-width: 640px) {
+    .sheet { padding: 22px 16px; margin: 12px 0; border-left: 0; border-right: 0; }
+    .toolbar { padding: 0 16px; }
+    h1 { font-size: 27px; }
+    .agent-contact { text-align: left; }
+  }
+</style>
+
+<div class="toolbar no-print">
+  <button onclick="window.print()">Print both pages</button>
+  <button class="ghost" onclick="document.querySelectorAll('.sheet')[0].scrollIntoView()">Flyer</button>
+  <button class="ghost" onclick="document.querySelectorAll('.sheet')[1].scrollIntoView()">Sign-in sheet</button>
+</div>
+
+<!-- ============ PAGE 1: FLYER ============ -->
+<div class="sheet">
+  <p class="eyebrow">Open House</p>
+  <h1>6175 Toledo Place</h1>
+  <p class="city">Haymarket, VA 20169 &middot; Piedmont</p>
+
+  <div class="when">
+    <small>Today</small>
+    Sunday, September 20 &middot; 1:00 &ndash; 3:00 PM
+  </div>
+
+  <div class="price-row">
+    <div class="price">$704,900</div>
+    <div class="specs">4 Bed &middot; 3 Full + 1 Half Bath &middot; 2,584 Sq Ft &middot; Built 2002</div>
+  </div>
+
+  <div class="photo">
+    Drop the main listing photo here &mdash; replace this box with
+    &lt;img src="photo.jpg" alt="6175 Toledo Place"&gt;
+  </div>
+
+  <p class="blurb">
+    Four-level townhome in Piedmont, Haymarket's gated golf community against the Bull Run
+    Mountains. Move-in ready and full of natural light, with hardwood across most of the main
+    living areas, minutes from Historic Haymarket, Gainesville, and the I-66 / Route 15 corridor.
+  </p>
+
+  <div class="cols">
+    <div>
+      <h2>The Home</h2>
+      <ul class="facts">
+        <li><span>Bedrooms</span><span>4</span></li>
+        <li><span>Baths</span><span>3 full, 1 half</span></li>
+        <li><span>Finished sq ft</span><span>2,584</span></li>
+        <li><span>Levels</span><span>4</span></li>
+        <li><span>Garage</span><span>2 car, front entry</span></li>
+        <li><span>Lot</span><span>0.05 acres</span></li>
+        <li><span>HOA</span><span>$200 / month</span></li>
+        <li><span>Taxes (2026)</span><span>$6,285 / year</span></li>
+        <li><span>MLS #</span><span>VAPW2128638</span></li>
+      </ul>
+    </div>
+
+    <div>
+      <h2>Highlights</h2>
+      <ul class="bullets">
+        <li>Kitchen island with seating, gas cooking, tile backsplash, wine rack, pantry</li>
+        <li>Soaring living room ceilings, Palladian windows, crown molding</li>
+        <li>Primary suite: tray ceiling, walk-in closet, soaking tub, separate shower</li>
+        <li>Lower-level theater with surround sound, gas fireplace, 106&Prime; 4K projector conveys</li>
+        <li>Full-width deck plus paver patio (2021)</li>
+        <li>Fresh paint and new carpet (2024), basement full bath (2023), HVAC (2018)</li>
+      </ul>
+
+      <h2 style="margin-top:14px">Community &amp; Schools</h2>
+      <ul class="bullets">
+        <li>Gated Piedmont: indoor and outdoor pools, tennis, basketball, athletic club, trails</li>
+        <li>Tom Fazio&ndash;designed Piedmont Golf Club (membership available)</li>
+        <li>Mountain View Elementary &middot; Bull Run Middle &middot; Battlefield High</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Presented By</h2>
+  <div class="agent">
+    <div>
+      <p class="agent-name">Ahmed &ldquo;Steve&rdquo; Makkiyah</p>
+      <p class="agent-role">
+        REALTOR&reg; &middot; Douglas Realty of Virginia, LLC<br>
+        VA License #0225242357
+      </p>
+    </div>
+    <div class="agent-contact">
+      <div>(734) 383-6945 &nbsp;mobile</div>
+      <div>(703) 955-4950 &nbsp;office</div>
+      <div>abman4444@gmail.com</div>
+    </div>
+  </div>
+
+  <p class="fineprint">
+    Information deemed reliable but not guaranteed. Square footage, lot size, taxes, HOA fees, and
+    school assignments should be independently verified. Not intended to solicit properties already
+    listed with another broker. Equal Housing Opportunity.
+  </p>
+</div>
+
+<!-- ============ PAGE 2: SIGN-IN SHEET ============ -->
+<div class="sheet">
+  <div class="signin-head">
+    <div>
+      <h1>Open House Sign-In</h1>
+      <p>6175 Toledo Place, Haymarket, VA 20169</p>
+    </div>
+    <p>Sunday, September 20 &middot; 1:00 &ndash; 3:00 PM</p>
+  </div>
+
+  <p class="note">
+    Please print clearly. We use this only to follow up about this home and answer your questions.
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="col-name">Name</th>
+          <th class="col-email">Email</th>
+          <th class="col-phone">Phone</th>
+          <th class="col-agent">Working with an agent?</th>
+          <th class="col-notes">Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="agent" style="margin-top:16px">
+    <div>
+      <p class="agent-name">Ahmed &ldquo;Steve&rdquo; Makkiyah</p>
+      <p class="agent-role">REALTOR&reg; &middot; Douglas Realty of Virginia, LLC</p>
+    </div>
+    <div class="agent-contact">
+      <div>(734) 383-6945</div>
+      <div>abman4444@gmail.com</div>
+    </div>
+  </div>
+</div>
