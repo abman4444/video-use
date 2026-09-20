@@ -61,3 +61,6 @@ project.md
 
 # Firecrawl CLI local cache (firecrawl scrape -o .firecrawl/...)
 .firecrawl/
+
+# Rendered open-house collateral (regenerate with headless Chrome)
+open-house/_*.png
