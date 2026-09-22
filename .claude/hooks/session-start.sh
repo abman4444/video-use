@@ -48,8 +48,11 @@ fi
 cd "${CLAUDE_PROJECT_DIR:-$(dirname "$0")/../..}"
 export PIP_ROOT_USER_ACTION=ignore
 
+# --python pins uv to the same interpreter the helpers run under, so the install
+# cannot land in some other Python that happens to be on the image.
 if command -v uv >/dev/null 2>&1; then
-  uv pip install --system -q -e . || python3 -m pip install -q -e .
+  uv pip install --system --python "$(command -v python3)" -q -e . \
+    || python3 -m pip install -q -e .
 else
   python3 -m pip install -q -e .
 fi
@@ -82,7 +85,8 @@ PY
 # best-effort: a failure here warns and leaves the rest of the session usable.
 if command -v yt-dlp >/dev/null 2>&1; then
   echo "yt-dlp $(yt-dlp --version 2>/dev/null || echo '?') already present"
-elif { command -v uv >/dev/null 2>&1 && uv pip install --system -q yt-dlp; } \
+elif { command -v uv >/dev/null 2>&1 \
+       && uv pip install --system --python "$(command -v python3)" -q yt-dlp; } \
   || python3 -m pip install -q yt-dlp; then
   echo "installed yt-dlp $(yt-dlp --version 2>/dev/null || echo '?')"
 else

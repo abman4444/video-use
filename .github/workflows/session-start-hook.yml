@@ -1,0 +1,148 @@
+name: session-start hook
+
+# Proves .claude/hooks/session-start.sh actually produces a working environment,
+# rather than only that the file exists. The runner is deliberately stripped back
+# to a cold state first, so each run exercises the real install path.
+
+on:
+  pull_request:
+    paths:
+      - '.claude/hooks/session-start.sh'
+      - '.claude/settings.json'
+      - 'pyproject.toml'
+      - '.github/workflows/session-start-hook.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint the hook
+        run: |
+          set -euo pipefail
+          if ! command -v shellcheck >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq shellcheck
+          fi
+          shellcheck --version | head -2
+          shellcheck .claude/hooks/session-start.sh
+
+  hook:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The hook prefers uv and falls back to pip; run both branches.
+        installer: [uv, pip]
+    name: hook (${{ matrix.installer }})
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        if: matrix.installer == 'uv'
+        run: python -m pip install --quiet uv
+
+      - name: Force a cold starting state
+        run: |
+          set -euo pipefail
+          sudo apt-get remove -y -qq ffmpeg >/dev/null 2>&1 || true
+          python -m pip uninstall -y -q video-use numpy librosa matplotlib pillow requests yt-dlp >/dev/null 2>&1 || true
+
+          # Assert the test is meaningful — if these were already present, the run
+          # would pass without the hook having done anything.
+          ! command -v ffmpeg >/dev/null 2>&1 || { echo "::error::ffmpeg present before hook ran"; exit 1; }
+          ! python3 -c 'import numpy' 2>/dev/null || { echo "::error::numpy present before hook ran"; exit 1; }
+          echo "cold state confirmed: no ffmpeg, no numpy"
+
+      - name: Run the hook
+        env:
+          CLAUDE_CODE_REMOTE: 'true'
+          CLAUDE_PROJECT_DIR: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          ./.claude/hooks/session-start.sh | tee /tmp/hook-out.txt
+
+      - name: Async declaration is valid JSON
+        run: |
+          set -euo pipefail
+          head -1 /tmp/hook-out.txt | python3 -c '
+          import json, sys
+          d = json.loads(sys.stdin.read())
+          assert d.get("async") is True, f"async not true: {d}"
+          assert isinstance(d.get("asyncTimeout"), int), f"bad asyncTimeout: {d}"
+          print("async declaration OK:", d)
+          '
+
+      - name: ffmpeg is installed and actually encodes
+        run: |
+          set -euo pipefail
+          command -v ffmpeg
+          command -v ffprobe
+          ffmpeg -y -f lavfi -i testsrc=duration=1:size=320x240:rate=30 \
+                    -f lavfi -i sine=frequency=440:duration=1 \
+                    -c:v libx264 -c:a aac -shortest /tmp/probe.mp4 >/dev/null 2>&1
+          codecs=$(ffprobe -v error -show_entries stream=codec_name -of csv=p=0 /tmp/probe.mp4 | paste -sd,)
+          echo "encoded streams: $codecs"
+          [ "$codecs" = "h264,aac" ] || { echo "::error::unexpected codecs: $codecs"; exit 1; }
+
+      - name: Python deps import
+        run: |
+          set -euo pipefail
+          python3 -c '
+          import requests, numpy, matplotlib, librosa, PIL
+          print("all five imports OK")
+          '
+
+      - name: Helpers run
+        run: |
+          set -euo pipefail
+          for h in render.py transcribe.py timeline_view.py grade.py asset_check.py project_notes.py; do
+            printf "%-20s " "$h"
+            python3 "helpers/$h" --help >/dev/null
+            echo ok
+          done
+
+      - name: yt-dlp is installed and sees ffmpeg
+        run: |
+          set -euo pipefail
+          yt-dlp --version
+          # yt-dlp must pick up the ffmpeg this hook installed, not a stray copy.
+          # Capture first: yt-dlp exits non-zero on a non-video URL, and under
+          # pipefail that would fail the step even when the grep matches. The
+          # version banner is printed before any network access, so the check
+          # does not depend on the URL resolving.
+          out=$(yt-dlp --verbose --simulate 'https://example.com' 2>&1 || true)
+          echo "$out" | grep -q 'exe versions:.*ffmpeg' \
+            || { echo "::error::yt-dlp does not see ffmpeg"; echo "$out" | head -20; exit 1; }
+          echo "yt-dlp sees ffmpeg"
+
+      - name: Re-running is idempotent
+        env:
+          CLAUDE_CODE_REMOTE: 'true'
+          CLAUDE_PROJECT_DIR: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          ./.claude/hooks/session-start.sh | tee /tmp/hook-warm.txt
+          grep -q 'already present' /tmp/hook-warm.txt \
+            || { echo "::error::warm run did not detect existing install"; exit 1; }
+
+      - name: Outside the web environment the hook is a silent no-op
+        run: |
+          set -euo pipefail
+          # CLAUDE_CODE_REMOTE deliberately unset: must produce no output at all,
+          # not even the async declaration, and must not touch the package manager.
+          # Unset explicitly rather than relying on it being absent from the
+          # runner, so the assertion tests the hook and not the environment.
+          out=$(env -u CLAUDE_CODE_REMOTE ./.claude/hooks/session-start.sh)
+          [ -z "$out" ] || { echo "::error::expected no output, got: $out"; exit 1; }
+          echo "local no-op OK"
