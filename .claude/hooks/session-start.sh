@@ -68,3 +68,15 @@ print("python deps ready (" + ", ".join(
     f"{p} {version(p)}" for p in ("numpy", "librosa", "matplotlib", "pillow", "requests")
 ) + ")")
 PY
+
+# --- yt-dlp (optional, for pulling sources from URLs) -------------------------
+# install.md:158 is explicit that yt-dlp must not block install, so this stays
+# best-effort: a failure here warns and leaves the rest of the session usable.
+if command -v yt-dlp >/dev/null 2>&1; then
+  echo "yt-dlp $(yt-dlp --version 2>/dev/null || echo '?') already present"
+elif { command -v uv >/dev/null 2>&1 && uv pip install --system -q yt-dlp; } \
+  || python3 -m pip install -q yt-dlp; then
+  echo "installed yt-dlp $(yt-dlp --version 2>/dev/null || echo '?')"
+else
+  echo "session-start hook: yt-dlp install failed — URL sources unavailable, rest of the session is fine" >&2
+fi
