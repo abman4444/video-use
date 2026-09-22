@@ -1,13 +1,21 @@
 #!/bin/bash
-# SessionStart hook: install what video-use's helpers need before the session starts.
-# Claude Code on the web hands us a fresh container each session, so ffmpeg and the
-# Python deps from pyproject.toml have to be reinstalled every time.
+# SessionStart hook: install what video-use's helpers need — ffmpeg, the Python deps
+# from pyproject.toml, and yt-dlp. Claude Code on the web hands us a fresh container
+# each session, so all of it has to be reinstalled every time. Runs asynchronously;
+# see the note above the async declaration below.
 set -euo pipefail
 
 # Local machines are the user's own setup — don't touch their package manager.
+# Checked before the async declaration below so local sessions stay a silent no-op.
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   exit 0
 fi
+
+# Run in the background so the session starts immediately. Cold install is ~15s;
+# until it finishes, ffmpeg and the Python deps are not yet on this container, so
+# a helper invoked in the session's first seconds can still fail on a missing
+# binary or import. Re-run the command, or this script, if that happens.
+echo '{"async": true, "asyncTimeout": 300000}'
 
 SUDO=""
 if [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1; then
