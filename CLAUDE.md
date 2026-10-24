@@ -31,18 +31,28 @@ email and its images, which is slow.
 Don't suggest pasting raw HTML into Gmail's compose window. Gmail can't take
 raw HTML, and copying a rendered page drops inline images such as the map.
 
+### Brand logo on every HTML
+
+The user's brand logo is the AM house-and-key mark in `brand/am-logo.png`
+(from ahmedknows.com, which redirects to amnovahomes.com; alt text "AM Real
+Estate — Ahmed Makkiyah"). When the user says "my brand logo" or "my logo",
+this is the image they mean. Put it at the top of every client email or HTML
+page: a white rounded tile about 48px tall, centered in the header, above the
+title. The file is small (94×96), so don't show it larger than about 96px.
+
 ### Brand signature on every HTML
 
 Every client email or HTML page ends with the user's brand signature:
 `brand/signature.html` (Ahmed "Steve" Makkiyah, REALTOR®, Douglas Realty of
 Virginia, NVAR Top Producer 2020–2025, mobile 734.383.6945, direct
 703.957.0060, links, license line, wire-fraud warning). Its banner image,
-`brand/signature-banner.jpg`, is the brand logo. Never leave the signature
-or the logo out.
+`brand/signature-banner.jpg`, is the signature banner. Never leave the
+signature, the banner or the logo out.
 
-Fill `{{BANNER_SRC}}` with a data URI of the banner for previews. When saving
-through the Gmail connector, attach the banner as an inline image and use
-`cid:attN`, because the connector strips every other image.
+Fill `{{BANNER_SRC}}` with a data URI of the banner for previews. Do the same
+for the logo. When saving through the Gmail connector, attach the logo and the
+banner as inline images and use `cid:attN`, because the connector strips every
+other image.
 
 ### Mortgage referrals
 
