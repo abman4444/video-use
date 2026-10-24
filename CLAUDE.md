@@ -31,6 +31,19 @@ email and its images, which is slow.
 Don't suggest pasting raw HTML into Gmail's compose window. Gmail can't take
 raw HTML, and copying a rendered page drops inline images such as the map.
 
+### Brand signature on every HTML
+
+Every client email or HTML page ends with the user's brand signature:
+`brand/signature.html` (Ahmed "Steve" Makkiyah, REALTOR®, Douglas Realty of
+Virginia, NVAR Top Producer 2020–2025, mobile 734.383.6945, direct
+703.957.0060, links, license line, wire-fraud warning). Its banner image,
+`brand/signature-banner.jpg`, is the brand logo. Never leave the signature
+or the logo out.
+
+Fill `{{BANNER_SRC}}` with a data URI of the banner for previews. When saving
+through the Gmail connector, attach the banner as an inline image and use
+`cid:attN`, because the connector strips every other image.
+
 ### Mortgage referrals
 
 The user's go-to loan officer is Laila Qrochi. When the user writes "Layla",
