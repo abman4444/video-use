@@ -31,14 +31,39 @@ email and its images, which is slow.
 Don't suggest pasting raw HTML into Gmail's compose window. Gmail can't take
 raw HTML, and copying a rendered page drops inline images such as the map.
 
+### Brand design on every HTML (the standard)
+
+Every client email, page or HTML deliverable uses the design language of the
+user's website, amnovahomes.com. The full spec is in `brand/DESIGN.md`:
+- **Colors:** navy #15233A, deep navy #0D1626, red #C8102E for calls to
+  action, sand-gold #ECC995 pills, bronze #AD9763 eyebrows.
+- **Fonts:** Fraunces for headings, Public Sans for body, Marcellus SC for the
+  wordmark, Tahoma for Arabic.
+- **Components:** pill buttons, and white cards with a 2px navy border.
+
+Don't use the old green and cream theme. Don't re-scrape the site, because
+`brand/DESIGN.md` already has its tokens. `brand/email-example.html` is the
+user-approved reference layout:
+- a navy top bar with the logo, the wordmark and a red WhatsApp pill
+- a deep-navy hero with a gold "AM NOVA HOMES" eyebrow, an Arabic title and an
+  English Fraunces title
+- the home cards
+- the red-header Laila panel
+- a "Ready to see them?" call to action
+- the signature
+- a deep-navy footer
+
+Content stays Arabic first, then English.
+
 ### Brand logo on every HTML
 
 The user's brand logo is the AM house-and-key mark in `brand/am-logo.png`
 (from ahmedknows.com, which redirects to amnovahomes.com; alt text "AM Real
 Estate — Ahmed Makkiyah"). When the user says "my brand logo" or "my logo",
 this is the image they mean. Put it at the top of every client email or HTML
-page: a white rounded tile about 48px tall, centered in the header, above the
-title. The file is small (94×96), so don't show it larger than about 96px.
+page, on a white rounded tile at the left of the navy top bar, next to the
+"Ahmed Makkiyah" wordmark. Repeat it small in the footer. The file is small
+(94×96), so don't show it larger than about 96px.
 
 ### Brand signature on every HTML
 
