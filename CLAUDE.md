@@ -33,7 +33,8 @@ raw HTML, and copying a rendered page drops inline images such as the map.
 
 ### Mortgage referrals
 
-The user's go-to loan officer is Laila Qrochi (American Pacific Mortgage,
+The user's go-to loan officer is Laila Qrochi. When the user writes "Layla",
+"layla" or "Laila", they mean her ("ليلى قروشي" in Arabic emails) (American Pacific Mortgage,
 NMLS #2115498, phone and WhatsApp +1 540-327-5863,
 laila.qrochi@apmortgage.com). Her contact card is `contacts/laila-qrochi.vcf`,
 and `contacts/laila-referral-blurb.txt` is a ready-to-send bilingual
